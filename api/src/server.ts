@@ -12,6 +12,8 @@ import { db } from './db/client.ts'
 import { env } from './env.ts'
 import { authPlugin } from './plugins/auth.ts'
 import { authRoutes } from './routes/auth.ts'
+import { studentRoutes } from './routes/students.ts'
+import { paymentRoutes } from './routes/payments.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -26,6 +28,8 @@ await app.register(fastifySensible)
 await app.register(fastifyRateLimit, { global: false }) // only routes that ask for it
 await app.register(authPlugin)
 await app.register(authRoutes)
+await app.register(studentRoutes)
+await app.register(paymentRoutes)
 
 app.get('/health', () => 'OK')
 

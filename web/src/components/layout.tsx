@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
+import { usePendingStudentCount } from '../hooks/usePendingStudentCount'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${
@@ -17,18 +17,14 @@ const teacherLinks = [
   { to: '/admin/students', label: 'Students', end: false },
   { to: '/admin/homework', label: 'Homework', end: false },
   { to: '/admin/submissions', label: 'Submissions', end: false },
+  { to: '/admin/payments', label: 'Payments', end: false },
 ]
 
 export default function Layout() {
   const { user, logout } = useAuth()
-  const queryClient = useQueryClient()
+  const pendingCount = usePendingStudentCount()
 
   const links = user?.role === 'teacher' ? teacherLinks : studentLinks
-
-  function handleLogout() {
-    queryClient.clear() // so the next person never sees the previous user's cached data
-    logout()
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -39,11 +35,16 @@ export default function Layout() {
             {links.map((l) => (
               <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
                 {l.label}
+                {l.to === '/admin/students' && pendingCount > 0 && (
+                  <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                    {pendingCount}
+                  </span>
+                )}
               </NavLink>
             ))}
             <span className="ml-2 text-sm text-slate-500">{user?.name}</span>
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
             >
               Log out

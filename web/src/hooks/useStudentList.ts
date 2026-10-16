@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { listStudents } from '../mocks/studentStore'
+import { api } from '../api/client'
+import type { Student } from '../types'
 
 export function useStudentList() {
-  return useQuery({ queryKey: ['students'], queryFn: listStudents })
+  return useQuery({ queryKey: ['students'], queryFn: () => api.get<Student[]>('/students') })
 }

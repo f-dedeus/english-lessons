@@ -27,7 +27,7 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
 
   const mine = assignments.data.filter((a) => a.homeworkId === homeworkId)
   const assignmentByStudent = new Map(mine.map((a) => [a.studentId, a]))
-  const visibleStudents = students.data.filter((s) => s.active || assignmentByStudent.has(s.id))
+  const visibleStudents = students.data.filter((s) => s.status === 'active' || assignmentByStudent.has(s.id))
 
   function toggle(id: number) {
     setSelected((prev) => {

@@ -4,6 +4,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { users } from '../db/schema/index.ts'
+import { isUniqueViolation } from '../db/errors.ts'
 
 // Checked when the email doesn't exist, so unknown emails take as long as wrong passwords
 const DUMMY_HASH = await argon2.hash('not-a-real-password')
@@ -38,7 +39,10 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         // Same message for "no such email" and "wrong password"
         throw app.httpErrors.unauthorized('Invalid email or password.')
       }
-      if (!user.active) {
+      if (user.status === 'pending') {
+        throw app.httpErrors.forbidden("Your account is waiting for your teacher's approval.")
+      }
+      if (user.status === 'inactive') {
         throw app.httpErrors.forbidden('This account is inactive. Please contact your teacher.')
       }
 
@@ -47,6 +51,43 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         token,
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
       }
+    },
+  )
+
+    app.post(
+    '/auth/signup',
+    {
+      config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
+      schema: {
+        body: z.object({
+          name: z.string().trim().min(1).max(100),
+          email: z.string().trim().toLowerCase().email().max(254),
+          password: z.string().min(8).max(200),
+        }),
+        response: { 201: z.object({ message: z.string() }) },
+      },
+    },
+    async (request, reply) => {
+      const { name, email, password } = request.body
+
+      try {
+        await db.insert(users).values({
+          name,
+          email,
+          passwordHash: await argon2.hash(password),
+          role: 'student',
+          status: 'pending',
+        })
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          throw app.httpErrors.conflict('An account with this email already exists.')
+        }
+        throw error
+      }
+
+      return reply
+        .code(201)
+        .send({ message: 'Account created. Your teacher needs to approve it before you can log in.' })
     },
   )
 

@@ -37,11 +37,11 @@ export const authPlugin = fp(async (app) => {
     }
 
     const [account] = await db
-      .select({ role: users.role, active: users.active })
+      .select({ role: users.role, status: users.status })
       .from(users)
       .where(eq(users.id, request.user.id))
 
-    if (!account || !account.active) throw app.httpErrors.unauthorized('Please log in.')
+    if (!account || account.status !== 'active') throw app.httpErrors.unauthorized('Please log in.')
 
     // Trust the database over the token: role changes apply immediately
     request.user = { id: request.user.id, role: account.role }

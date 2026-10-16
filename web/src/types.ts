@@ -24,14 +24,22 @@ export type Homework = {
   questions: Question[]
 }
 
+export type StudentStatus = 'pending' | 'active' | 'inactive'
+
 export type Student = {
   id: number
   name: string
   email: string
-  active: boolean
+  status: StudentStatus
 }
 
 export type StudentInput = Pick<Student, 'name' | 'email'>
+
+export type Payment = {
+  studentId: number
+  month: string
+  note: string | null
+}
 
 // What the student pages display: a HomeworkAssignment joined with its Homework
 export type Assignment = {

@@ -3,7 +3,8 @@ import type { User } from '../types'
 
 export type AuthContextValue = {
   user: User | null
-  login: (user: User) => void
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
 }
 

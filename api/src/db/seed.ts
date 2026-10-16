@@ -12,6 +12,7 @@ import {
   homeworkQuestions,
   homeworkAssignments,
   submissions,
+  payments
 } from './schema/index.ts'
 
 // Dev only: everyone gets this password
@@ -25,27 +26,37 @@ if (!['localhost', '127.0.0.1'].includes(host)) {
 async function main() {
   console.log('Clearing tables...')
   await db.execute(sql`
-    truncate table submissions, homework_assignments, homework_questions, homework,
+    truncate table payments, submissions, homework_assignments, homework_questions, homework,
       notes, lesson_assignments, lesson_materials, lessons, users
     restart identity cascade
   `)
 
   const passwordHash = await argon2.hash(DEV_PASSWORD)
 
-  const [teacher] = await db
-    .insert(users)
-    .values({ name: 'Teacher', email: 'teacher@example.com', passwordHash, role: 'teacher' })
-    .returning()
-
   const [ana, bruno] = await db
     .insert(users)
     .values([
-      { name: 'Ana', email: 'ana@example.com', passwordHash, role: 'student' },
-      { name: 'Bruno', email: 'bruno@example.com', passwordHash, role: 'student' },
-      { name: 'Carla', email: 'carla@example.com', passwordHash, role: 'student', active: false },
+      { name: 'Ana', email: 'ana@example.com', passwordHash, role: 'student', status: 'active' },
+      { name: 'Bruno', email: 'bruno@example.com', passwordHash, role: 'student', status: 'active' },
+      { name: 'Carla', email: 'carla@example.com', passwordHash, role: 'student', status: 'inactive' },
+      { name: 'Diego', email: 'diego@example.com', passwordHash, role: 'student', status: 'pending' },
     ])
     .returning()
 
+  const [teacher] = await db
+    .insert(users)
+    .values({ name: 'Teacher', email: 'teacher@example.com', passwordHash, role: 'teacher', status: 'active' })
+    .returning()
+
+  const months = (year: number, from: number, to: number) =>
+    Array.from({ length: to - from + 1 }, (_, i) => `${year}-${String(from + i).padStart(2, '0')}-01`)
+
+  await db.insert(payments).values([
+    ...months(2026, 1, 10).map((month) => ({ studentId: ana.id, month })),
+    ...months(2026, 1, 8).map((month) => ({ studentId: bruno.id, month })),
+    { studentId: bruno.id, month: '2026-09-01', note: 'Paid in cash' },
+  ])
+    
   const [presentSimple, pastSimple] = await db
     .insert(lessons)
     .values([

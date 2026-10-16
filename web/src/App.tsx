@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout'
 import ProtectedRoute from './components/protectedRoute'
 import Login from './pages/login'
+import Signup from './pages/signup'
 import StudentDashboard from './pages/studentDashboard'
 import LessonPage from './pages/lessonPage'
 import AdminLessons from './pages/admin/adminLessons'
@@ -15,6 +16,7 @@ import AdminHomeworkEdit from './pages/admin/adminHomeworkEdit'
 import MyHomework from './pages/myHomework'
 import HomeworkDetailPage from './pages/homeworkDetailPage'
 import AdminSubmissions from './pages/admin/adminSubmissions'
+import AdminPayments from './pages/admin/adminPayments'
 
 
 //const Placeholder = ({ name }: { name: string }) => (
@@ -25,6 +27,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
       {/* Must be logged in */}
       <Route element={<ProtectedRoute />}>
@@ -48,6 +51,7 @@ export default function App() {
             <Route path="/admin/homework/new" element={<AdminHomeworkNew />} />
             <Route path="/admin/homework/:id/edit" element={<AdminHomeworkEdit />} />
             <Route path="/admin/submissions" element={<AdminSubmissions />} />
+            <Route path="/admin/payments" element={<AdminPayments />} />
           </Route>
         </Route>
       </Route>

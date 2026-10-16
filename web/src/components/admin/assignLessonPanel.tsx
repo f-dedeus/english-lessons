@@ -33,7 +33,7 @@ export default function AssignLessonPanel({ lessonId, lessonTitle, onClose }: Pr
 type BodyProps = Props & { students: Student[]; assignedIds: number[] }
 
 function PanelBody({ lessonId, lessonTitle, students, assignedIds, onClose }: BodyProps) {
-  const activeStudents = students.filter((s) => s.active)
+  const activeStudents = students.filter((s) => s.status === 'active')
   const activeIds = new Set(activeStudents.map((s) => s.id))
 
   const [checked, setChecked] = useState<Set<number>>(

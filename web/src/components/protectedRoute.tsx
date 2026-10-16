@@ -3,7 +3,9 @@ import { useAuth } from '../hooks/useAuth'
 import type { Role } from '../types'
 
 export default function ProtectedRoute({ role }: { role?: Role }) {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) return <p className="p-8 text-slate-500">Loading...</p>
 
   if (!user) return <Navigate to="/login" replace />
 
