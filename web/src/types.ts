@@ -22,6 +22,7 @@ export type Homework = {
   title: string
   instructions: string // optional general text; can be empty
   questions: Question[]
+  locked: boolean //// true once any student has submitted: the questions can't change anymore
 }
 
 export type StudentStatus = 'pending' | 'active' | 'inactive'
@@ -78,7 +79,7 @@ export type Submission = {
 
 export type LessonInput = Omit<Lesson, 'id'>
 
-export type HomeworkInput = Omit<Homework, 'id'>
+export type HomeworkInput = Omit<Homework, 'id' | 'locked'>
 
 // Homework as one student sees it: the assignment + the homework + their answer
 export type HomeworkDetail = {

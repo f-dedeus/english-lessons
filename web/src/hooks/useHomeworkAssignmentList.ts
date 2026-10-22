@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { listHomeworkAssignments } from '../mocks/homeworkStore'
+import { api } from '../api/client'
+import type { HomeworkAssignment } from '../types'
 
 export function useHomeworkAssignmentList() {
-  return useQuery({ queryKey: ['homeworkAssignments'], queryFn: listHomeworkAssignments })
+  return useQuery({
+    queryKey: ['homeworkAssignments'],
+    queryFn: () => api.get<HomeworkAssignment[]>('/homework-assignments'),
+  })
 }

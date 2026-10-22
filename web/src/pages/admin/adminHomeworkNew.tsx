@@ -22,7 +22,7 @@ export default function AdminHomeworkNew() {
           onSubmit={(input) => create.mutate(input, { onSuccess: () => navigate('/admin/homework') })}
         />
       )}
-      {create.isError && <p className="text-red-600">Could not create the homework.</p>}
+      {create.isError && <p className="text-red-600">{create.error.message}</p>}
     </div>
   )
 }

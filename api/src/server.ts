@@ -18,6 +18,10 @@ import type { FastifyError } from 'fastify'
 import { lessonAssignmentRoutes } from './routes/lesson-assignments.ts'
 import { lessonRoutes } from './routes/lessons.ts'
 import { myLessonRoutes } from './routes/my-lessons.ts'
+import { myNoteRoutes, noteRoutes } from './routes/notes.ts'
+import { homeworkRoutes } from './routes/homework.ts'
+import { myHomeworkRoutes } from './routes/my-homework.ts'
+import { submissionRoutes } from './routes/submissions.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -59,6 +63,11 @@ await app.register(paymentRoutes)
 await app.register(lessonRoutes)
 await app.register(myLessonRoutes)
 await app.register(lessonAssignmentRoutes)
+await app.register(noteRoutes)
+await app.register(myNoteRoutes)
+await app.register(homeworkRoutes)
+await app.register(myHomeworkRoutes)
+await app.register(submissionRoutes)
 
 app.get('/health', () => 'OK')
 

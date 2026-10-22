@@ -25,13 +25,17 @@ export default function AdminHomeworkEdit() {
       <HomeworkForm
         lessons={lessons.data}
         initial={current}
+        locked={current.locked}
         submitLabel="Save changes"
         submitting={update.isPending}
-        onSubmit={(input) =>
-          update.mutate({ id: homeworkId, patch: input }, { onSuccess: () => navigate('/admin/homework') })
-        }
+        onSubmit={(input) => {
+          const patch = current.locked
+            ? { lessonId: input.lessonId, title: input.title, instructions: input.instructions }
+            : input
+          update.mutate({ id: homeworkId, patch }, { onSuccess: () => navigate('/admin/homework') })
+        }}
       />
-      {update.isError && <p className="text-red-600">Could not save the homework.</p>}
+      {update.isError && <p className="text-red-600">{update.error.message}</p>}
     </div>
   )
 }

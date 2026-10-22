@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from './useAuth'
-import { submitHomework, gradeSubmission } from '../mocks/homeworkStore'
+import { api } from '../api/client'
 import type { Answer } from '../types'
 
 function useRefresh() {
@@ -14,12 +13,11 @@ function useRefresh() {
 }
 
 export function useSubmitHomework() {
-  const { user } = useAuth()
   const refresh = useRefresh()
 
   return useMutation({
     mutationFn: ({ assignmentId, answers }: { assignmentId: number; answers: Record<number, Answer> }) =>
-      submitHomework({ studentId: user!.id, assignmentId, answers }),
+      api.post<void>(`/me/homework/${assignmentId}/submit`, { answers }),
     onSuccess: refresh,
   })
 }
@@ -28,8 +26,8 @@ export function useGradeSubmission() {
   const refresh = useRefresh()
 
   return useMutation({
-    mutationFn: (input: { assignmentId: number; grade: number; feedback: string }) =>
-      gradeSubmission(input),
+    mutationFn: ({ assignmentId, grade, feedback }: { assignmentId: number; grade: number; feedback: string }) =>
+      api.put<void>(`/submissions/${assignmentId}/grade`, { grade, feedback }),
     onSuccess: refresh,
   })
 }

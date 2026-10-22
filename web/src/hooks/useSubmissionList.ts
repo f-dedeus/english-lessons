@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { listSubmissionRows } from '../mocks/homeworkStore'
+import { api } from '../api/client'
+import type { SubmissionRow } from '../types'
 
 export function useSubmissionList() {
-  return useQuery({ queryKey: ['submissions'], queryFn: listSubmissionRows })
+  return useQuery({
+    queryKey: ['submissions'],
+    queryFn: () => api.get<SubmissionRow[]>('/submissions'),
+  })
 }

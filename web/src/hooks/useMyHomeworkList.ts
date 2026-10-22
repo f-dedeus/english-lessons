@@ -1,13 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from './useAuth'
-import { listAssignmentsForStudent } from '../mocks/homeworkStore'
+import { api } from '../api/client'
+import type { Assignment } from '../types'
 
 export function useMyHomeworkList() {
-  const { user } = useAuth()
-
   return useQuery({
-    queryKey: ['myHomework', user?.id],
-    queryFn: () => listAssignmentsForStudent(user!.id),
-    enabled: !!user,
+    queryKey: ['myHomework', 'list'],
+    queryFn: () => api.get<Assignment[]>('/me/homework'),
   })
 }

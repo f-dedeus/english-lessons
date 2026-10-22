@@ -35,7 +35,7 @@ export default function StudentNotes({ studentId }: { studentId: number }) {
             key={n.id}
             className={`rounded-md border p-4 ${noteCardStyles[n.color]} ${n.dismissed ? 'opacity-50' : ''}`}
           >
-            <p className="whitespace-pre-wrap text-sm">{n.text}</p>
+            <p className="whitespace-pre-wrap text-sm wrap-anywhere">{n.text}</p>
             <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
               <span className="opacity-70">{new Date(n.createdAt).toLocaleDateString()}</span>
               {n.pinned && <span>📌 Pinned</span>}

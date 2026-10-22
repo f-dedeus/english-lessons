@@ -34,7 +34,7 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-8 shadow-sm"
       >
-        <h1 className="text-center text-2xl font-bold text-indigo-600">English Lessons</h1>
+        <h1 className="text-center text-2xl font-bold text-indigo-600">English4all</h1>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>

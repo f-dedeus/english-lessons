@@ -3,7 +3,7 @@ import { useLessonList } from '../hooks/useLessonList'
 import { useMyHomeworkList } from '../hooks/useMyHomeworkList'
 import AssignmentCard from '../components/assignmentCard'
 import { useNoteList } from '../hooks/useNoteList'
-import { useUpdateNote } from '../hooks/useNoteMutations'
+import { useDismissNote } from '../hooks/useNoteMutations'
 import StickyNote from '../components/stickyNote'
 
 
@@ -11,7 +11,7 @@ export default function StudentDashboard() {
   const lessons = useLessonList()
   const assignments = useMyHomeworkList()
   const notes = useNoteList()
-  const updateNote = useUpdateNote()
+  const dismissNote = useDismissNote()
 
   return (
     <div className="space-y-10">
@@ -22,7 +22,7 @@ export default function StudentDashboard() {
               key={n.id}
               note={n}
               index={i}
-              onDismiss={() => updateNote.mutate({ id: n.id, patch: { dismissed: true } })}
+              onDismiss={() => dismissNote.mutate(n.id)}
             />
           ))}
         </section>
