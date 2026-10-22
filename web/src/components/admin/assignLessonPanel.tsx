@@ -80,7 +80,7 @@ function PanelBody({ lessonId, lessonTitle, students, assignedIds, onClose }: Bo
         ))}
       </div>
 
-      {save.isError && <p className="text-sm text-red-600">Could not save the assignments.</p>}
+      {save.isError && <p className="text-sm text-red-600">{save.error.message}</p>}
 
       <div className="flex gap-3">
         <button

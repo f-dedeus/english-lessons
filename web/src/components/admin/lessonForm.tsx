@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { LessonInput, LessonMaterial } from '../../types'
-import { newId } from '../../mocks/lessonStore'
+import { newId } from '../../utils/ids'
 import { getEmbedUrl } from '../../utils/youtube'
 import { getDrivePreviewUrl, isDriveUrl } from '../../utils/drive'
 

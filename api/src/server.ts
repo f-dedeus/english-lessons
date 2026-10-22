@@ -14,11 +14,37 @@ import { authPlugin } from './plugins/auth.ts'
 import { authRoutes } from './routes/auth.ts'
 import { studentRoutes } from './routes/students.ts'
 import { paymentRoutes } from './routes/payments.ts'
+import type { FastifyError } from 'fastify'
+import { lessonAssignmentRoutes } from './routes/lesson-assignments.ts'
+import { lessonRoutes } from './routes/lessons.ts'
+import { myLessonRoutes } from './routes/my-lessons.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
+
+function friendlyValidationMessage(error: FastifyError): string {
+  const raw = (error.validation?.[0] as { message?: unknown } | undefined)?.message ?? error.message
+  const text = typeof raw === 'string' ? raw : 'Some of the data is not valid.'
+  try {
+    const parsed = JSON.parse(text)
+    if (Array.isArray(parsed) && typeof parsed[0]?.message === 'string') return parsed[0].message
+  } catch {
+    /* not JSON, use the text as it is */
+  }
+  return text
+}
+
 app.setSerializerCompiler(serializerCompiler)
 app.setValidatorCompiler(validatorCompiler)
+
+app.setErrorHandler((error: FastifyError, request, reply) => {
+  if (error.validation) {
+    return reply
+      .code(400)
+      .send({ statusCode: 400, error: 'Bad Request', message: friendlyValidationMessage(error) })
+  }
+  return reply.send(error)
+})
 
 await app.register(fastifyCors, {
   origin: env.FRONTEND_URL,
@@ -30,6 +56,9 @@ await app.register(authPlugin)
 await app.register(authRoutes)
 await app.register(studentRoutes)
 await app.register(paymentRoutes)
+await app.register(lessonRoutes)
+await app.register(myLessonRoutes)
+await app.register(lessonAssignmentRoutes)
 
 app.get('/health', () => 'OK')
 

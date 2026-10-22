@@ -15,7 +15,7 @@ export default function AdminLessonNew() {
         submitting={create.isPending}
         onSubmit={(input) => create.mutate(input, { onSuccess: () => navigate('/admin/lessons') })}
       />
-      {create.isError && <p className="text-red-600">Could not create the lesson.</p>}
+      {create.isError && <p className="text-red-600">{create.error.message}</p>} {/* ← changed */}
     </div>
   )
 }

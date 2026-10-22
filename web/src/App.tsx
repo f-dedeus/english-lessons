@@ -17,6 +17,7 @@ import MyHomework from './pages/myHomework'
 import HomeworkDetailPage from './pages/homeworkDetailPage'
 import AdminSubmissions from './pages/admin/adminSubmissions'
 import AdminPayments from './pages/admin/adminPayments'
+import Account from './pages/account'
 
 
 //const Placeholder = ({ name }: { name: string }) => (
@@ -32,6 +33,7 @@ export default function App() {
       {/* Must be logged in */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
+          <Route path="/account" element={<Account />} />
           {/* Students only */}
           <Route element={<ProtectedRoute role="student" />}>
             <Route path="/" element={<StudentDashboard />} />

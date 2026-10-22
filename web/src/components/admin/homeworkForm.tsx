@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { HomeworkInput, Lesson, Question } from '../../types'
-import { newId } from '../../mocks/lessonStore'
+import { newId } from '../../utils/ids'
 import { newQuestion, validateQuestion } from '../../utils/questions'
 import QuestionEditor from '../questions/questionEditor'
 

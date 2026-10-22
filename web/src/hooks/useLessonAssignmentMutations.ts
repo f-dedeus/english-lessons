@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { assignLesson, unassignLesson, setLessonStudents } from '../mocks/assignmentStore'
+import { api } from '../api/client'
 
 // Refreshes the assignment lists and every lesson list (including the student dashboard)
 function useRefresh() {
@@ -15,7 +15,7 @@ export function useSetLessonStudents() {
   const refresh = useRefresh()
   return useMutation({
     mutationFn: ({ lessonId, studentIds }: { lessonId: number; studentIds: number[] }) =>
-      setLessonStudents(lessonId, studentIds),
+      api.put<void>(`/lessons/${lessonId}/students`, { studentIds }),
     onSuccess: refresh,
   })
 }
@@ -24,7 +24,7 @@ export function useAssignLesson() {
   const refresh = useRefresh()
   return useMutation({
     mutationFn: ({ lessonId, studentId }: { lessonId: number; studentId: number }) =>
-      assignLesson(lessonId, studentId),
+      api.post<void>('/lesson-assignments', { lessonId, studentId }),
     onSuccess: refresh,
   })
 }
@@ -32,7 +32,7 @@ export function useAssignLesson() {
 export function useUnassignLesson() {
   const refresh = useRefresh()
   return useMutation({
-    mutationFn: (assignmentId: number) => unassignLesson(assignmentId),
+    mutationFn: (assignmentId: number) => api.delete<void>(`/lesson-assignments/${assignmentId}`),
     onSuccess: refresh,
   })
 }

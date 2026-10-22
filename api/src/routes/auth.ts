@@ -124,7 +124,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       const [user] = await db.select().from(users).where(eq(users.id, request.user.id))
 
       if (!user || !(await argon2.verify(user.passwordHash, request.body.currentPassword))) {
-        throw app.httpErrors.unauthorized('Current password is incorrect.')
+        throw app.httpErrors.badRequest('Current password is incorrect.')
       }
 
       await db

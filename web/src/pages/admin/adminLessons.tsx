@@ -41,6 +41,12 @@ export default function AdminLessons() {
         </Link>
       </div>
 
+      {(remove.isError || update.isError || duplicate.isError) && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {(remove.error ?? update.error ?? duplicate.error)?.message}
+        </p>
+      )}
+
       {lessons.isLoading && <p className="text-slate-500">Loading lessons...</p>}
       {lessons.isError && <p className="text-red-600">Could not load lessons.</p>}
       {lessons.data?.length === 0 && <p className="text-slate-500">No lessons yet. Create your first one.</p>}

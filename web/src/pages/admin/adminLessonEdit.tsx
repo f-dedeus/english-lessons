@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useLessonById } from '../../hooks/useLessonById'
+import { useAdminLessonById } from '../../hooks/useAdminLessonById' // ← changed
 import { useUpdateLesson } from '../../hooks/useLessonMutations'
 import LessonForm from '../../components/admin/lessonForm'
 
@@ -8,7 +8,7 @@ export default function AdminLessonEdit() {
   const lessonId = Number(id)
   const navigate = useNavigate()
 
-  const lesson = useLessonById(lessonId)
+  const lesson = useAdminLessonById(lessonId) // ← changed
   const update = useUpdateLesson()
 
   if (lesson.isLoading) return <p className="text-slate-500">Loading lesson...</p>
@@ -26,7 +26,7 @@ export default function AdminLessonEdit() {
           update.mutate({ id: lessonId, patch: input }, { onSuccess: () => navigate('/admin/lessons') })
         }
       />
-      {update.isError && <p className="text-red-600">Could not save the lesson.</p>}
+      {update.isError && <p className="text-red-600">{update.error.message}</p>} {/* ← changed */}
     </div>
   )
 }
