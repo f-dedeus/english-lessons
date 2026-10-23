@@ -20,6 +20,11 @@ declare module 'fastify' {
     authenticate: (request: FastifyRequest) => Promise<void>
     requireRole: (role: Role) => (request: FastifyRequest) => Promise<void>
   }
+
+  // Routes with this setting can be used while a password change is still required
+  interface FastifyContextConfig {
+    allowPasswordChange?: boolean
+  }
 }
 
 export const authPlugin = fp(async (app) => {
@@ -37,11 +42,16 @@ export const authPlugin = fp(async (app) => {
     }
 
     const [account] = await db
-      .select({ role: users.role, status: users.status })
+      .select({ role: users.role, status: users.status, mustChangePassword: users.mustChangePassword })
       .from(users)
       .where(eq(users.id, request.user.id))
 
     if (!account || account.status !== 'active') throw app.httpErrors.unauthorized('Please log in.')
+
+    // Still on a temporary password: only the routes that allow it can be used
+    if (account.mustChangePassword && !request.routeOptions.config.allowPasswordChange) {
+      throw app.httpErrors.forbidden('You must choose a new password before continuing.')
+    }
 
     // Trust the database over the token: role changes apply immediately
     request.user = { id: request.user.id, role: account.role }

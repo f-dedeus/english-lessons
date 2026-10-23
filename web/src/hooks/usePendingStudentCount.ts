@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import { useAuth } from './useAuth'
 import type { Student } from '../types'
 
+// Things on the Students page that need the teacher's attention
 export function usePendingStudentCount(): number {
   const { user } = useAuth()
 
@@ -10,7 +11,7 @@ export function usePendingStudentCount(): number {
     queryKey: ['students'],
     queryFn: () => api.get<Student[]>('/students'),
     enabled: user?.role === 'teacher',
-    select: (students) => students.filter((s) => s.status === 'pending').length,
+    select: (students) => students.filter((s) => s.status === 'pending' || s.resetRequested).length,
   })
 
   return query.data ?? 0

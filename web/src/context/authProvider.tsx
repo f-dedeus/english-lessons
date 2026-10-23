@@ -52,5 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   )
 
-  return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
+  // Reloads the user from the API (for example after they chose a new password)
+  const refreshUser = useCallback(async () => {
+    const me = await api.get<User>('/auth/me')
+    setUser(me)
+  }, [])
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

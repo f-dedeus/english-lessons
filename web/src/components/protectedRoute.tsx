@@ -9,7 +9,8 @@ export default function ProtectedRoute({ role }: { role?: Role }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  // Wrong role: send them to their own home instead of showing an error
+  if (user.mustChangePassword) return <Navigate to="/set-password" replace />
+
   if (role && user.role !== role) {
     return <Navigate to={user.role === 'teacher' ? '/admin/lessons' : '/'} replace />
   }

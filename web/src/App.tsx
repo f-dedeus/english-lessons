@@ -18,6 +18,8 @@ import HomeworkDetailPage from './pages/homeworkDetailPage'
 import AdminSubmissions from './pages/admin/adminSubmissions'
 import AdminPayments from './pages/admin/adminPayments'
 import Account from './pages/account'
+import ForgotPassword from './pages/forgotPassword'
+import SetPassword from './pages/setPassword'
 
 
 //const Placeholder = ({ name }: { name: string }) => (
@@ -29,6 +31,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/set-password" element={<SetPassword />} />
 
       {/* Must be logged in */}
       <Route element={<ProtectedRoute />}>

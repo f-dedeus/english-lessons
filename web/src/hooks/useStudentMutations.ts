@@ -38,8 +38,19 @@ export function useRejectStudent() {
 }
 
 export function useResetStudentPassword() {
+  const refresh = useRefreshStudents()
   return useMutation({
     mutationFn: (id: number) =>
       api.post<{ temporaryPassword: string }>(`/students/${id}/reset-password`),
+    onSuccess: refresh,
+  })
+}
+
+// Ignores a "forgot password" request
+export function useDismissResetRequest() {
+  const refresh = useRefreshStudents()
+  return useMutation({
+    mutationFn: (id: number) => api.delete<void>(`/students/${id}/reset-request`),
+    onSuccess: refresh,
   })
 }

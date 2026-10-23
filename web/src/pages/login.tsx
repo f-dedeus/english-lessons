@@ -56,6 +56,12 @@ export default function Login() {
           />
         </div>
 
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+            Forgot your password?
+          </Link>
+        </div>
+
         {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
         <button

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useStudentList } from '../../hooks/useStudentList'
 import {
   useCreateStudent,
+  useDismissResetRequest,
   useRejectStudent,
   useResetStudentPassword,
   useUpdateStudent,
@@ -35,7 +36,7 @@ function CredentialsBox({ credentials, onClose }: { credentials: Credentials; on
       </p>
       <p className="text-sm text-green-900">
         Share these details with the student. <strong>This password is shown only once</strong>, so copy it
-        now. They can change it after logging in.
+        now. They will be asked to choose their own password the first time they log in.
       </p>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <span className="text-green-900">{credentials.email}</span>
@@ -57,6 +58,7 @@ export default function AdminStudents() {
   const update = useUpdateStudent()
   const reject = useRejectStudent()
   const reset = useResetStudentPassword()
+  const dismiss = useDismissResetRequest()
 
   const [mode, setMode] = useState<Mode>(null)
   const [search, setSearch] = useState('')
@@ -84,6 +86,7 @@ export default function AdminStudents() {
   const editing = typeof mode === 'number' ? students.data?.find((s) => s.id === mode) : undefined
 
   const pending = students.data?.filter((s) => s.status === 'pending') ?? []
+  const resetRequests = students.data?.filter((s) => s.resetRequested && s.status !== 'inactive') ?? []
 
   const query = search.trim().toLowerCase()
   const visible = students.data?.filter(
@@ -107,19 +110,50 @@ export default function AdminStudents() {
 
       {credentials && <CredentialsBox credentials={credentials} onClose={() => setCredentials(null)} />}
 
+      {resetRequests.length > 0 && (
+        <section className="space-y-3 rounded-lg border border-sky-200 bg-sky-50 p-5">
+          <h2 className="font-semibold text-sky-900">Password reset requests ({resetRequests.length})</h2>
+          {resetRequests.map((s) => (
+            <div
+              key={s.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-white px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="font-medium text-slate-800 wrap-anywhere">{s.name}</p>
+                <p className="text-sm text-slate-500 wrap-anywhere">{s.email}</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  disabled={reset.isPending}
+                  onClick={() => handleReset(s.id, s.name, s.email)}
+                >
+                  Reset password
+                </button>
+                <button
+                  className="text-sm font-medium text-slate-600 hover:underline"
+                  disabled={dismiss.isPending}
+                  onClick={() => dismiss.mutate(s.id)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       {pending.length > 0 && (
         <section className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-5">
-          <h2 className="font-semibold text-amber-900">
-            Waiting for approval ({pending.length})
-          </h2>
+          <h2 className="font-semibold text-amber-900">Waiting for approval ({pending.length})</h2>
           {pending.map((s) => (
             <div
               key={s.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-white px-4 py-3"
             >
-              <div>
-                <p className="font-medium text-slate-800">{s.name}</p>
-                <p className="text-sm text-slate-500">{s.email}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-slate-800 wrap-anywhere">{s.name}</p>
+                <p className="text-sm text-slate-500 wrap-anywhere">{s.email}</p>
               </div>
               <div className="flex items-center gap-4">
                 <button
@@ -208,16 +242,21 @@ export default function AdminStudents() {
               s.status === 'active' ? '' : 'opacity-60'
             }`}
           >
-            <div>
-              <div className="flex items-center gap-3">
-                <p className="font-semibold text-slate-800">{s.name}</p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="font-semibold text-slate-800 wrap-anywhere">{s.name}</p>
                 {s.status === 'inactive' && (
                   <span className="rounded-full bg-slate-200 px-3 py-0.5 text-xs font-medium text-slate-700">
                     inactive
                   </span>
                 )}
+                {s.resetRequested && s.status !== 'inactive' && (
+                  <span className="rounded-full bg-sky-100 px-3 py-0.5 text-xs font-medium text-sky-800">
+                    reset requested
+                  </span>
+                )}
               </div>
-              <p className="text-sm text-slate-500">{s.email}</p>
+              <p className="text-sm text-slate-500 wrap-anywhere">{s.email}</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <Link to={`/admin/students/${s.id}`} className={actionClass}>

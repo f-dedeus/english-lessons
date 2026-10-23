@@ -1,4 +1,4 @@
-import { pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { userRole, userStatus } from './enums.ts'
 import { createdAt, id } from './helpers.ts'
@@ -12,6 +12,8 @@ export const users = pgTable(
     passwordHash: text().notNull(),
     role: userRole().notNull().default('student'),
     status: userStatus().notNull().default('pending'),
+    mustChangePassword: boolean().notNull().default(false),
+    passwordResetRequestedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('users_email_unique').on(sql`lower(${t.email})`)],

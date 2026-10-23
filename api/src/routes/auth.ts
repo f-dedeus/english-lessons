@@ -1,10 +1,10 @@
 import argon2 from 'argon2'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
-import { users } from '../db/schema/index.ts'
 import { isUniqueViolation } from '../db/errors.ts'
+import { users } from '../db/schema/index.ts'
 
 // Checked when the email doesn't exist, so unknown emails take as long as wrong passwords
 const DUMMY_HASH = await argon2.hash('not-a-real-password')
@@ -14,6 +14,7 @@ const publicUser = z.object({
   name: z.string(),
   email: z.string(),
   role: z.enum(['teacher', 'student']),
+  mustChangePassword: z.boolean(),
 })
 
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -49,12 +50,18 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       const token = app.jwt.sign({ id: user.id, role: user.role })
       return {
         token,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          mustChangePassword: user.mustChangePassword,
+        },
       }
     },
   )
 
-    app.post(
+  app.post(
     '/auth/signup',
     {
       config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
@@ -91,15 +98,52 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   )
 
+  // Doesn't send an email: it flags the student so the teacher sees the request.
+  // The answer is always the same, so it can't be used to find out who has an account.
+  app.post(
+    '/auth/forgot-password',
+    {
+      config: { rateLimit: { max: 5, timeWindow: '1 hour' } },
+      schema: {
+        body: z.object({ email: z.string().trim().toLowerCase().email().max(254) }),
+        response: { 202: z.object({ message: z.string() }) },
+      },
+    },
+    async (request, reply) => {
+      await db
+        .update(users)
+        .set({ passwordResetRequestedAt: new Date() })
+        .where(
+          and(
+            sql`lower(${users.email}) = ${request.body.email}`,
+            eq(users.role, 'student'),
+            inArray(users.status, ['active', 'pending']),
+          ),
+        )
+
+      return reply.code(202).send({
+        message:
+          'If an account exists with this email, your teacher has been notified and will contact you with a new password.',
+      })
+    },
+  )
+
   app.get(
     '/auth/me',
     {
       preHandler: [app.authenticate],
+      config: { allowPasswordChange: true },
       schema: { response: { 200: publicUser } },
     },
     async (request) => {
       const [user] = await db
-        .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          mustChangePassword: users.mustChangePassword,
+        })
         .from(users)
         .where(eq(users.id, request.user.id))
 
@@ -112,7 +156,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     '/auth/change-password',
     {
       preHandler: [app.authenticate],
-      config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+      config: { rateLimit: { max: 5, timeWindow: '1 minute' }, allowPasswordChange: true },
       schema: {
         body: z.object({
           currentPassword: z.string().min(1).max(200),
@@ -129,7 +173,11 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
 
       await db
         .update(users)
-        .set({ passwordHash: await argon2.hash(request.body.newPassword) })
+        .set({
+          passwordHash: await argon2.hash(request.body.newPassword),
+          mustChangePassword: false,
+          passwordResetRequestedAt: null,
+        })
         .where(eq(users.id, user.id))
 
       return reply.code(204).send()

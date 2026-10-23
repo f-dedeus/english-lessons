@@ -1,6 +1,12 @@
 export type Role = 'student' | 'teacher'
 
-export type User = { id: number; name: string; email: string; role: Role }
+export type User = { 
+  id: number
+  name: string 
+  email: string 
+  role: Role
+  mustChangePassword: boolean
+}
 
 // Reusable content (the library)
 export type Lesson = {
@@ -32,6 +38,7 @@ export type Student = {
   name: string
   email: string
   status: StudentStatus
+  resetRequested: boolean
 }
 
 export type StudentInput = Pick<Student, 'name' | 'email'>
