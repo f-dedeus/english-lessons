@@ -22,6 +22,20 @@
       "when": 1792789333212,
       "tag": "0002_fresh_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793109711329,
+      "tag": "0003_dry_skaar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793113098768,
+      "tag": "0004_empty_sprite",
+      "breakpoints": true
     }
   ]
 }

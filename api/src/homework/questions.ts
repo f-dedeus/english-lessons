@@ -27,29 +27,38 @@ type StoredQuestion = { id: number; content: QuestionContent }
 export function checkAnswers(
   questions: StoredQuestion[],
   answers: Record<string, Answer>,
+  options: { allowIncomplete?: boolean } = {},
 ): string | null {
+  const strict = !options.allowIncomplete
+
   for (const [index, { id, content }] of questions.entries()) {
     const answer = answers[String(id)]
     const problem = `Question ${index + 1} needs a valid answer.`
 
-    if (!answer || answer.type !== content.type) return problem
+    if (!answer) {
+      if (strict) return problem
+      continue
+    }
+    if (answer.type !== content.type) return problem
 
     if (content.type === 'multiple_choice' && answer.type === 'multiple_choice') {
       const picked = answer.selected
       const validOptions = picked.every((i) => i < content.options.length)
       const noRepeats = new Set(picked).size === picked.length
-      const rightCount = content.multiple ? picked.length >= 1 : picked.length === 1
-      if (!validOptions || !noRepeats || !rightCount) return problem
+      let countOk: boolean
+      if (strict) countOk = content.multiple ? picked.length >= 1 : picked.length === 1
+      else countOk = content.multiple ? true : picked.length <= 1
+      if (!validOptions || !noRepeats || !countOk) return problem
     }
 
     if (content.type === 'open_text' && answer.type === 'open_text') {
-      if (!answer.text.trim()) return problem
+      if (strict && !answer.text.trim()) return problem
     }
 
     if (content.type === 'fill_blanks' && answer.type === 'fill_blanks') {
-      const complete =
-        answer.values.length === countBlanks(content.text) && answer.values.every((v) => v.trim())
-      if (!complete) return problem
+      const rightLength = answer.values.length === countBlanks(content.text)
+      const allFilled = answer.values.every((v) => v.trim())
+      if (!rightLength || (strict && !allFilled)) return problem
     }
   }
   return null
@@ -63,6 +72,7 @@ export function normalizeAnswers(
   const result: Record<string, Answer> = {}
   for (const { id } of questions) {
     const answer = answers[String(id)]
+    if (!answer) continue
     if (answer.type === 'open_text') {
       result[String(id)] = { type: 'open_text', text: answer.text.trim() }
     } else if (answer.type === 'fill_blanks') {

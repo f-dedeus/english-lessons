@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import argon2 from 'argon2'
 import { env } from '../env.ts'
 import { db, pool } from './client.ts'
+import { importPlacementTest } from '../placement/import.ts'
 import {
   users,
   lessons,
@@ -26,7 +27,7 @@ if (!['localhost', '127.0.0.1'].includes(host)) {
 async function main() {
   console.log('Clearing tables...')
   await db.execute(sql`
-    truncate table payments, submissions, homework_assignments, homework_questions, homework,
+    truncate table placement_attempts, placement_questions, app_settings, payments, submissions, homework_assignments, homework_questions, homework,
       notes, lesson_assignments, lesson_materials, lessons, users
     restart identity cascade
   `)
@@ -39,7 +40,7 @@ async function main() {
       { name: 'Ana', email: 'ana@example.com', passwordHash, role: 'student', status: 'active' },
       { name: 'Bruno', email: 'bruno@example.com', passwordHash, role: 'student', status: 'active' },
       { name: 'Carla', email: 'carla@example.com', passwordHash, role: 'student', status: 'inactive' },
-      { name: 'Diego', email: 'diego@example.com', passwordHash, role: 'student', status: 'pending' },
+      { name: 'Diego', email: 'diego@example.com', passwordHash, role: 'student', status: 'pending', needsPlacementTest: true },
     ])
     .returning()
 
@@ -171,6 +172,7 @@ async function main() {
 
   console.log('Done. Demo logins (password for all: %s):', DEV_PASSWORD)
   console.log('  teacher@example.com (teacher), ana@example.com, bruno@example.com')
+  await importPlacementTest()
   console.log('  carla@example.com exists but is inactive')
 }
 

@@ -13,6 +13,7 @@ export const users = pgTable(
     role: userRole().notNull().default('student'),
     status: userStatus().notNull().default('pending'),
     mustChangePassword: boolean().notNull().default(false),
+    needsPlacementTest: boolean().notNull().default(false),
     passwordResetRequestedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },

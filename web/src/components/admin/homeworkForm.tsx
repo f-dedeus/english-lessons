@@ -26,7 +26,7 @@ function QuestionSummary({ question, index }: { question: Question; index: numbe
       <p className="font-medium text-slate-700">
         {index + 1}. {typeLabels[question.type]}
       </p>
-      <p className="mt-1 text-slate-500 [overflow-wrap:anywhere]">{text}</p>
+      <p className="mt-1 text-slate-500 wrap-anywhere">{text}</p>
     </div>
   )
 }
@@ -34,7 +34,7 @@ function QuestionSummary({ question, index }: { question: Question; index: numbe
 type Props = {
   lessons: Lesson[]
   initial?: HomeworkInput
-  locked?: boolean // students already answered: the questions can't change
+  locked?: boolean // students already started or answered: questions and time limit can't change
   submitLabel: string
   submitting: boolean
   onSubmit: (input: HomeworkInput) => void
@@ -45,6 +45,8 @@ export default function HomeworkForm({ lessons, initial, locked = false, submitL
   const [title, setTitle] = useState(initial?.title ?? '')
   const [instructions, setInstructions] = useState(initial?.instructions ?? '')
   const [questions, setQuestions] = useState<Question[]>(initial?.questions ?? [])
+  const [timed, setTimed] = useState(initial?.timeLimitMinutes != null)
+  const [minutes, setMinutes] = useState(initial?.timeLimitMinutes?.toString() ?? '30')
   const [error, setError] = useState<string | null>(null)
 
   function updateQuestion(index: number, question: Question) {
@@ -73,6 +75,10 @@ export default function HomeworkForm({ lessons, initial, locked = false, submitL
     if (!title.trim()) return setError('The homework needs a title.')
 
     if (!locked) {
+      const limit = Number(minutes)
+      if (timed && (!Number.isInteger(limit) || limit < 1 || limit > 600)) {
+        return setError('The time limit must be a whole number of minutes, between 1 and 600.')
+      }
       if (questions.length === 0) return setError('Add at least one question.')
       for (let i = 0; i < questions.length; i++) {
         const problem = validateQuestion(questions[i])
@@ -85,6 +91,7 @@ export default function HomeworkForm({ lessons, initial, locked = false, submitL
       lessonId: Number(lessonId),
       title: title.trim(),
       instructions: instructions.trim(),
+      timeLimitMinutes: locked ? (initial?.timeLimitMinutes ?? null) : timed ? Number(minutes) : null,
       questions,
     })
   }
@@ -117,6 +124,38 @@ export default function HomeworkForm({ lessons, initial, locked = false, submitL
             onChange={(e) => setInstructions(e.target.value)}
           />
         </div>
+
+        <div className="space-y-2">
+          {locked ? (
+            <p className="text-sm text-slate-600">
+              Time limit:{' '}
+              <span className="font-medium">
+                {initial?.timeLimitMinutes != null ? `${initial.timeLimitMinutes} minutes` : 'none'}
+              </span>
+            </p>
+          ) : (
+            <>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)} />
+                Set a time limit
+              </label>
+              {timed && (
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="number"
+                    min={1}
+                    max={600}
+                    value={minutes}
+                    onChange={(e) => setMinutes(e.target.value)}
+                    className="w-24 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  />
+                  minutes. The timer starts when the student clicks Start, and the questions stay hidden
+                  until then.
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -125,8 +164,9 @@ export default function HomeworkForm({ lessons, initial, locked = false, submitL
         {locked ? (
           <>
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Students have already answered this homework, so its questions are locked. You can still change
-              the title and instructions. To make a different version, go back and use Duplicate.
+              Students have already started or answered this homework, so its questions and time limit are
+              locked. You can still change the title and instructions. To make a different version, go back
+              and use Duplicate.
             </p>
             {questions.map((q, i) => (
               <QuestionSummary key={q.id} question={q} index={i} />

@@ -21,9 +21,11 @@ declare module 'fastify' {
     requireRole: (role: Role) => (request: FastifyRequest) => Promise<void>
   }
 
-  // Routes with this setting can be used while a password change is still required
   interface FastifyContextConfig {
+    // Usable while a password change is still required
     allowPasswordChange?: boolean
+    // Usable by accounts still waiting for the teacher's approval (only the placement test)
+    allowPending?: boolean
   }
 }
 
@@ -33,7 +35,7 @@ export const authPlugin = fp(async (app) => {
     sign: { expiresIn: env.JWT_EXPIRES_IN },
   })
 
-  // Must be logged in, with an account that still exists and is active
+  // Must be logged in, with an account that still exists and is not inactive
   app.decorate('authenticate', async (request: FastifyRequest) => {
     try {
       await request.jwtVerify()
@@ -46,7 +48,12 @@ export const authPlugin = fp(async (app) => {
       .from(users)
       .where(eq(users.id, request.user.id))
 
-    if (!account || account.status !== 'active') throw app.httpErrors.unauthorized('Please log in.')
+    if (!account || account.status === 'inactive') throw app.httpErrors.unauthorized('Please log in.')
+
+    // Waiting for approval: only the routes marked allowPending can be used
+    if (account.status === 'pending' && !request.routeOptions.config.allowPending) {
+      throw app.httpErrors.forbidden("Your account is waiting for your teacher's approval.")
+    }
 
     // Still on a temporary password: only the routes that allow it can be used
     if (account.mustChangePassword && !request.routeOptions.config.allowPasswordChange) {

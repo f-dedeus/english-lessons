@@ -1,4 +1,4 @@
-import { asc, eq, inArray, type SQL } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, or, type SQL } from 'drizzle-orm'
 import { db } from './client.ts'
 import { homework, homeworkAssignments, homeworkQuestions, submissions } from './schema/index.ts'
 import type { QuestionContent } from './schema/json-types.ts'
@@ -39,13 +39,19 @@ export async function fetchHomework(where?: SQL) {
   const ids = rows.map((h) => h.id)
   const questions = await fetchQuestions(ids)
 
+  // Locked once any student has started it (timed) or sent answers
   const locked = new Set<number>()
   if (ids.length > 0) {
     const lockedRows = await db
       .selectDistinct({ homeworkId: homeworkAssignments.homeworkId })
-      .from(submissions)
-      .innerJoin(homeworkAssignments, eq(submissions.homeworkAssignmentId, homeworkAssignments.id))
-      .where(inArray(homeworkAssignments.homeworkId, ids))
+      .from(homeworkAssignments)
+      .leftJoin(submissions, eq(submissions.homeworkAssignmentId, homeworkAssignments.id))
+      .where(
+        and(
+          inArray(homeworkAssignments.homeworkId, ids),
+          or(isNotNull(homeworkAssignments.startedAt), isNotNull(submissions.id)),
+        ),
+      )
     for (const row of lockedRows) locked.add(row.homeworkId)
   }
 
@@ -54,6 +60,7 @@ export async function fetchHomework(where?: SQL) {
     lessonId: h.lessonId,
     title: h.title,
     instructions: h.instructions,
+    timeLimitMinutes: h.timeLimitMinutes,
     locked: locked.has(h.id),
     questions: (questions.get(h.id) ?? []).map(toQuestion),
   }))
@@ -80,6 +87,8 @@ export async function fetchDetails(where: SQL) {
     questions: (questions.get(hw.id) ?? []).map(toQuestion),
     dueDate: assignment.dueDate,
     status: assignment.status,
+    timeLimitMinutes: hw.timeLimitMinutes,
+    startedAt: assignment.startedAt,
     answers: submission?.answers,
     submittedAt: submission?.submittedAt.toISOString(),
     grade: submission?.grade ?? undefined,

@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useStudentList } from '../../hooks/useStudentList'
 import { useHomeworkAssignmentList } from '../../hooks/useHomeworkAssignmentList'
-import { useAssignHomework, useUnassignHomework } from '../../hooks/useHomeworkMutations'
+import {
+  useAssignHomework,
+  useResetHomeworkAssignment,
+  useUnassignHomework,
+} from '../../hooks/useHomeworkMutations'
 
 type Props = { homeworkId: number; homeworkTitle: string; onClose: () => void }
 
@@ -13,6 +17,7 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
   const assignments = useHomeworkAssignmentList()
   const assign = useAssignHomework()
   const unassign = useUnassignHomework()
+  const reset = useResetHomeworkAssignment()
 
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [dueDate, setDueDate] = useState(inOneWeek)
@@ -27,7 +32,9 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
 
   const mine = assignments.data.filter((a) => a.homeworkId === homeworkId)
   const assignmentByStudent = new Map(mine.map((a) => [a.studentId, a]))
-  const visibleStudents = students.data.filter((s) => s.status === 'active' || assignmentByStudent.has(s.id))
+  const visibleStudents = students.data.filter(
+    (s) => s.status === 'active' || assignmentByStudent.has(s.id),
+  )
 
   function toggle(id: number) {
     setSelected((prev) => {
@@ -56,6 +63,14 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
     if (window.confirm(warning)) unassign.mutate(assignmentId)
   }
 
+  function handleAnotherAttempt(assignmentId: number, studentName: string, status: string) {
+    const warning =
+      status === 'pending'
+        ? `Reset ${studentName}'s timer so they can start "${homeworkTitle}" again?`
+        : `This deletes ${studentName}'s answer and grade for "${homeworkTitle}" and lets them do it again. Continue?`
+    if (window.confirm(warning)) reset.mutate(assignmentId)
+  }
+
   return (
     <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
       <p className="text-sm font-medium text-slate-700">Assign "{homeworkTitle}" to:</p>
@@ -66,23 +81,40 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
         {visibleStudents.map((s) => {
           const existing = assignmentByStudent.get(s.id)
           if (existing) {
+            const progress = existing.expired
+              ? 'time expired'
+              : existing.startedAt && existing.status === 'pending'
+                ? 'in progress'
+                : existing.status
+            const canRetry = existing.startedAt !== undefined || existing.status !== 'pending'
             return (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm"
               >
                 <span>
                   <span className="font-medium text-slate-800">{s.name}</span>
-                  <span className="text-slate-500">
-                    {' '}· due {existing.dueDate} · {existing.status}
+                  <span className={existing.expired ? 'text-red-600' : 'text-slate-500'}>
+                    {' '}· due {existing.dueDate} · {progress}
                   </span>
                 </span>
-                <button
-                  className="font-medium text-red-600 hover:underline"
-                  onClick={() => handleRemove(existing.id, s.name, existing.status)}
-                >
-                  Remove
-                </button>
+                <span className="flex items-center gap-4">
+                  {canRetry && (
+                    <button
+                      className="font-medium text-indigo-600 hover:underline"
+                      disabled={reset.isPending}
+                      onClick={() => handleAnotherAttempt(existing.id, s.name, existing.status)}
+                    >
+                      Give another attempt
+                    </button>
+                  )}
+                  <button
+                    className="font-medium text-red-600 hover:underline"
+                    onClick={() => handleRemove(existing.id, s.name, existing.status)}
+                  >
+                    Remove
+                  </button>
+                </span>
               </div>
             )
           }
@@ -126,7 +158,8 @@ export default function AssignHomeworkPanel({ homeworkId, homeworkTitle, onClose
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {assign.isError && <p className="text-sm text-red-600">Could not assign the homework.</p>}
+      {assign.isError && <p className="text-sm text-red-600">{assign.error.message}</p>}
+      {reset.isError && <p className="text-sm text-red-600">{reset.error.message}</p>}
     </div>
   )
 }

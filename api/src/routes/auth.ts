@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { isUniqueViolation } from '../db/errors.ts'
 import { users } from '../db/schema/index.ts'
+import { isPlacementRequired } from '../placement/state.ts'
 
 // Checked when the email doesn't exist, so unknown emails take as long as wrong passwords
 const DUMMY_HASH = await argon2.hash('not-a-real-password')
@@ -14,8 +15,24 @@ const publicUser = z.object({
   name: z.string(),
   email: z.string(),
   role: z.enum(['teacher', 'student']),
+  status: z.enum(['pending', 'active', 'inactive']),
   mustChangePassword: z.boolean(),
+  placementRequired: z.boolean(),
 })
+
+type UserRow = typeof users.$inferSelect
+
+async function toPublicUser(user: UserRow) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    mustChangePassword: user.mustChangePassword,
+    placementRequired: await isPlacementRequired(user.id, user.needsPlacementTest),
+  }
+}
 
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
@@ -40,24 +57,13 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         // Same message for "no such email" and "wrong password"
         throw app.httpErrors.unauthorized('Invalid email or password.')
       }
-      if (user.status === 'pending') {
-        throw app.httpErrors.forbidden("Your account is waiting for your teacher's approval.")
-      }
       if (user.status === 'inactive') {
         throw app.httpErrors.forbidden('This account is inactive. Please contact your teacher.')
       }
 
+      // Pending accounts can log in too: they can only reach the placement test
       const token = app.jwt.sign({ id: user.id, role: user.role })
-      return {
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          mustChangePassword: user.mustChangePassword,
-        },
-      }
+      return { token, user: await toPublicUser(user) }
     },
   )
 
@@ -84,6 +90,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
           passwordHash: await argon2.hash(password),
           role: 'student',
           status: 'pending',
+          needsPlacementTest: true,
         })
       } catch (error) {
         if (isUniqueViolation(error)) {
@@ -92,9 +99,10 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         throw error
       }
 
-      return reply
-        .code(201)
-        .send({ message: 'Account created. Your teacher needs to approve it before you can log in.' })
+      return reply.code(201).send({
+        message:
+          'Account created. Log in to take a short placement test. Your teacher will approve your account afterwards.',
+      })
     },
   )
 
@@ -132,23 +140,13 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     '/auth/me',
     {
       preHandler: [app.authenticate],
-      config: { allowPasswordChange: true },
+      config: { allowPasswordChange: true, allowPending: true },
       schema: { response: { 200: publicUser } },
     },
     async (request) => {
-      const [user] = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          email: users.email,
-          role: users.role,
-          mustChangePassword: users.mustChangePassword,
-        })
-        .from(users)
-        .where(eq(users.id, request.user.id))
-
+      const [user] = await db.select().from(users).where(eq(users.id, request.user.id))
       if (!user) throw app.httpErrors.unauthorized('Please log in.')
-      return user
+      return toPublicUser(user)
     },
   )
 

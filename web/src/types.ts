@@ -26,9 +26,10 @@ export type Homework = {
   id: number
   lessonId: number
   title: string
-  instructions: string // optional general text; can be empty
+  instructions: string
   questions: Question[]
-  locked: boolean //// true once any student has submitted: the questions can't change anymore
+  timeLimitMinutes: number | null // null = no time limit
+  locked: boolean // true once any student has started or sent it: questions and time limit can't change
 }
 
 export type StudentStatus = 'pending' | 'active' | 'inactive'
@@ -57,6 +58,8 @@ export type Assignment = {
   dueDate: string
   status: 'pending' | 'submitted' | 'graded'
   grade?: number
+  timeLimitMinutes?: number
+  expired: boolean
 }
 
 // Per-student records
@@ -73,6 +76,8 @@ export type HomeworkAssignment = {
   studentId: number
   dueDate: string
   status: 'pending' | 'submitted' | 'graded'
+  startedAt?: string
+  expired: boolean // timed, started, never sent, and the time ran out
 }
 
 export type Submission = {
@@ -101,6 +106,14 @@ export type HomeworkDetail = {
   submittedAt?: string
   grade?: number
   feedback?: string
+  timer?: HomeworkTimer
+}
+
+export type HomeworkTimer = {
+  limitMinutes: number
+  state: 'not_started' | 'running' | 'expired' | 'finished'
+  endsAt?: string
+  serverNow: string
 }
 
 // One submitted answer, as the teacher sees it

@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNotNull, or } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
@@ -12,12 +12,14 @@ import {
   users,
 } from '../db/schema/index.ts'
 import { sameJson } from '../homework/questions.ts'
+import { isExpired } from '../homework/timer.ts'
 import { assignmentSchema, homeworkSchema, questionInput } from './homework-schemas.ts'
 
 const idParams = z.object({ id: z.coerce.number().int().positive() })
 const positiveInt = z.number().int().positive()
 const title = z.string().trim().min(1).max(200)
 const instructions = z.string().trim().max(2000)
+const timeLimit = z.number().int().min(1).max(600).nullable()
 
 const dueDate = z
   .string()
@@ -26,6 +28,23 @@ const dueDate = z
     const date = new Date(value)
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
   }, 'Choose a valid due date.')
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+// Locked once any student has started it (timed) or sent answers
+async function isLocked(tx: Tx, homeworkId: number) {
+  const [{ total }] = await tx
+    .select({ total: count() })
+    .from(homeworkAssignments)
+    .leftJoin(submissions, eq(submissions.homeworkAssignmentId, homeworkAssignments.id))
+    .where(
+      and(
+        eq(homeworkAssignments.homeworkId, homeworkId),
+        or(isNotNull(homeworkAssignments.startedAt), isNotNull(submissions.id)),
+      ),
+    )
+  return total > 0
+}
 
 export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
   // Teacher-only
@@ -44,6 +63,7 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
           lessonId: positiveInt,
           title,
           instructions,
+          timeLimitMinutes: timeLimit,
           questions: z.array(questionInput).min(1, 'Add at least one question.').max(50),
         }),
         response: { 201: homeworkSchema },
@@ -61,7 +81,12 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
 
         const [created] = await tx
           .insert(homework)
-          .values({ lessonId: input.lessonId, title: input.title, instructions: input.instructions })
+          .values({
+            lessonId: input.lessonId,
+            title: input.title,
+            instructions: input.instructions,
+            timeLimitMinutes: input.timeLimitMinutes,
+          })
           .returning({ id: homework.id })
 
         await tx
@@ -86,6 +111,7 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
             lessonId: positiveInt.optional(),
             title: title.optional(),
             instructions: instructions.optional(),
+            timeLimitMinutes: timeLimit.optional(),
             questions: z.array(questionInput).min(1).max(50).optional(),
           })
           .refine((body) => Object.keys(body).length > 0, 'Nothing to update.'),
@@ -97,7 +123,10 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
       const { questions, ...fields } = request.body
 
       await db.transaction(async (tx) => {
-        const [existing] = await tx.select({ id: homework.id }).from(homework).where(eq(homework.id, id))
+        const [existing] = await tx
+          .select({ id: homework.id, timeLimitMinutes: homework.timeLimitMinutes })
+          .from(homework)
+          .where(eq(homework.id, id))
         if (!existing) throw app.httpErrors.notFound('Homework not found.')
 
         if (fields.lessonId !== undefined) {
@@ -108,26 +137,33 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
           if (!lesson) throw app.httpErrors.badRequest('Lesson not found.')
         }
 
-        if (questions) {
-          const [{ total }] = await tx
-            .select({ total: count() })
-            .from(submissions)
-            .innerJoin(homeworkAssignments, eq(submissions.homeworkAssignmentId, homeworkAssignments.id))
-            .where(eq(homeworkAssignments.homeworkId, id))
+        const limitChanges =
+          fields.timeLimitMinutes !== undefined && fields.timeLimitMinutes !== existing.timeLimitMinutes
+        const locked = questions || limitChanges ? await isLocked(tx, id) : false
 
+        if (limitChanges && locked) {
+          throw app.httpErrors.conflict(
+            "Students already started or answered this homework, so its time limit can't be changed. Duplicate the homework to make a different version.",
+          )
+        }
+
+        if (questions) {
           const current = await tx
             .select({ content: homeworkQuestions.content })
             .from(homeworkQuestions)
             .where(eq(homeworkQuestions.homeworkId, id))
             .orderBy(asc(homeworkQuestions.position), asc(homeworkQuestions.id))
 
-          const unchanged = sameJson(current.map((q) => q.content), questions)
+          const unchanged = sameJson(
+            current.map((q) => q.content),
+            questions,
+          )
 
-          if (total > 0) {
-            // Locked: the questions can only be sent back exactly as they are
+          if (locked) {
+            // The questions can only be sent back exactly as they are
             if (!unchanged) {
               throw app.httpErrors.conflict(
-                "Students already answered this homework, so its questions can't be changed. Duplicate the homework to make a different version.",
+                "Students already started or answered this homework, so its questions can't be changed. Duplicate the homework to make a different version.",
               )
             }
           } else if (!unchanged) {
@@ -181,6 +217,7 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
             lessonId: original.lessonId,
             title: `${original.title} (copy)`.slice(0, 200),
             instructions: original.instructions,
+            timeLimitMinutes: original.timeLimitMinutes,
           })
           .returning({ id: homework.id })
 
@@ -203,13 +240,20 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
     '/homework-assignments',
     { schema: { response: { 200: z.array(assignmentSchema) } } },
     async () => {
-      const rows = await db.select().from(homeworkAssignments).orderBy(asc(homeworkAssignments.id))
-      return rows.map((r) => ({
-        id: r.id,
-        homeworkId: r.homeworkId,
-        studentId: r.studentId,
-        dueDate: r.dueDate,
-        status: r.status,
+      const rows = await db
+        .select({ a: homeworkAssignments, limit: homework.timeLimitMinutes })
+        .from(homeworkAssignments)
+        .innerJoin(homework, eq(homeworkAssignments.homeworkId, homework.id))
+        .orderBy(asc(homeworkAssignments.id))
+
+      return rows.map(({ a, limit }) => ({
+        id: a.id,
+        homeworkId: a.homeworkId,
+        studentId: a.studentId,
+        dueDate: a.dueDate,
+        status: a.status,
+        startedAt: a.startedAt?.toISOString(),
+        expired: isExpired({ limitMinutes: limit, startedAt: a.startedAt, status: a.status }),
       }))
     },
   )
@@ -250,6 +294,27 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
   // Also deletes that student's answer, if there is one
   app.delete('/homework-assignments/:id', { schema: { params: idParams } }, async (request, reply) => {
     await db.delete(homeworkAssignments).where(eq(homeworkAssignments.id, request.params.id))
+    return reply.code(204).send()
+  })
+
+  // Another attempt: deletes the answer and grade (if any) and resets the timer
+  app.post('/homework-assignments/:id/reset', { schema: { params: idParams } }, async (request, reply) => {
+    const { id } = request.params
+
+    await db.transaction(async (tx) => {
+      const [assignment] = await tx
+        .select({ id: homeworkAssignments.id })
+        .from(homeworkAssignments)
+        .where(eq(homeworkAssignments.id, id))
+      if (!assignment) throw app.httpErrors.notFound('Assignment not found.')
+
+      await tx.delete(submissions).where(eq(submissions.homeworkAssignmentId, id))
+      await tx
+        .update(homeworkAssignments)
+        .set({ status: 'pending', startedAt: null })
+        .where(eq(homeworkAssignments.id, id))
+    })
+
     return reply.code(204).send()
   })
 }

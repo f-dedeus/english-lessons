@@ -73,6 +73,7 @@ export default function AdminHomework() {
                   <p className="text-sm text-slate-500">
                     Lesson: {lesson?.title ?? 'unknown'} · {h.questions.length} question
                     {h.questions.length === 1 ? '' : 's'} · {count} student{count === 1 ? '' : 's'}
+                    {h.timeLimitMinutes !== null && ` · ⏱ ${h.timeLimitMinutes} min`}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">

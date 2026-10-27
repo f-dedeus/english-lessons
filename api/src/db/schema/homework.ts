@@ -15,9 +15,14 @@ export const homework = pgTable(
       .references(() => lessons.id, { onDelete: 'restrict' }),
     title: text().notNull(),
     instructions: text().notNull().default(''),
+    // Minutes a student has once they start; null = no time limit
+    timeLimitMinutes: integer(),
     createdAt: createdAt(),
   },
-  (t) => [index('homework_lesson_idx').on(t.lessonId)],
+  (t) => [
+    index('homework_lesson_idx').on(t.lessonId),
+    check('homework_time_limit_range', sql`${t.timeLimitMinutes} is null or ${t.timeLimitMinutes} between 1 and 600`),
+  ],
 )
 
 export const homeworkQuestions = pgTable(
@@ -45,6 +50,7 @@ export const homeworkAssignments = pgTable(
       .references(() => users.id),
     dueDate: date({ mode: 'string' }).notNull(),
     status: homeworkStatus().notNull().default('pending'),
+    startedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

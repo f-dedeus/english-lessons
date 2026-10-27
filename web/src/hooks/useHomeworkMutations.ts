@@ -66,3 +66,12 @@ export function useUnassignHomework() {
     onSuccess: refresh,
   })
 }
+
+// Another attempt: deletes the answer and grade (if any) and resets the timer
+export function useResetHomeworkAssignment() {
+  const refresh = useRefresh()
+  return useMutation({
+    mutationFn: (assignmentId: number) => api.post<void>(`/homework-assignments/${assignmentId}/reset`),
+    onSuccess: refresh,
+  })
+}

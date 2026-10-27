@@ -22,6 +22,7 @@ import { myNoteRoutes, noteRoutes } from './routes/notes.ts'
 import { homeworkRoutes } from './routes/homework.ts'
 import { myHomeworkRoutes } from './routes/my-homework.ts'
 import { submissionRoutes } from './routes/submissions.ts'
+import { myPlacementRoutes } from './routes/my-placement.ts'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -68,6 +69,7 @@ await app.register(myNoteRoutes)
 await app.register(homeworkRoutes)
 await app.register(myHomeworkRoutes)
 await app.register(submissionRoutes)
+await app.register(myPlacementRoutes)
 
 app.get('/health', () => 'OK')
 

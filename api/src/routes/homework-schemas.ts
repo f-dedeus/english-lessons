@@ -58,7 +58,8 @@ export const homeworkSchema = z.object({
   lessonId: z.number(),
   title: z.string(),
   instructions: z.string(),
-  locked: z.boolean(), // true once any student has submitted
+  timeLimitMinutes: z.number().nullable(),
+  locked: z.boolean(), // true once any student has started or sent it
   questions: z.array(questionOut),
 })
 
@@ -74,6 +75,15 @@ export const detailSchema = z.object({
   submittedAt: z.string().optional(),
   grade: z.number().optional(),
   feedback: z.string().optional(),
+  // Only for timed homework
+  timer: z
+    .object({
+      limitMinutes: z.number(),
+      state: z.enum(['not_started', 'running', 'expired', 'finished']),
+      endsAt: z.string().optional(),
+      serverNow: z.string(),
+    })
+    .optional(),
 })
 
 export const submissionRowSchema = detailSchema.extend({ studentId: z.number() })
@@ -84,4 +94,6 @@ export const assignmentSchema = z.object({
   studentId: z.number(),
   dueDate: z.string(),
   status,
+  startedAt: z.string().optional(),
+  expired: z.boolean(),
 })

@@ -12,6 +12,15 @@ function useRefresh() {
     ])
 }
 
+// Starts the clock of a timed homework
+export function useStartHomework() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (assignmentId: number) => api.post<void>(`/me/homework/${assignmentId}/start`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myHomework'] }),
+  })
+}
+
 export function useSubmitHomework() {
   const refresh = useRefresh()
 
