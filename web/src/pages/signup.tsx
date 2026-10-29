@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 import PasswordInput from '../components/passwordInput'
 
+
 const inputClass =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none'
 
@@ -43,10 +44,14 @@ export default function Signup() {
         <div className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
           <h1 className="text-2xl font-bold text-indigo-600">Account created</h1>
           <p className="text-slate-600">
-            Your teacher needs to approve your account before you can log in. Please check back soon.
+            Log in to take a short test that helps your teacher find your English level. Your teacher will
+            approve your account afterwards.
           </p>
-          <Link to="/login" className="inline-block text-sm font-medium text-indigo-600 hover:underline">
-            Back to log in
+          <Link
+            to="/login"
+            className="inline-block rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            Log in
           </Link>
         </div>
       </div>
@@ -63,7 +68,12 @@ export default function Signup() {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
-          <input className={inputClass} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            className={inputClass}
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>

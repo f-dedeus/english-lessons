@@ -36,6 +36,13 @@
       "when": 1793113098768,
       "tag": "0004_empty_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793229528929,
+      "tag": "0005_fuzzy_satana",
+      "breakpoints": true
     }
   ]
 }

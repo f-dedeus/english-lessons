@@ -5,6 +5,8 @@ import AssignmentCard from '../components/assignmentCard'
 import { useNoteList } from '../hooks/useNoteList'
 import { useDismissNote } from '../hooks/useNoteMutations'
 import StickyNote from '../components/stickyNote'
+import { useMyLevel } from '../hooks/usePlacement'
+import { describeLevel } from '../utils/placement'
 
 
 export default function StudentDashboard() {
@@ -12,9 +14,18 @@ export default function StudentDashboard() {
   const assignments = useMyHomeworkList()
   const notes = useNoteList()
   const dismissNote = useDismissNote()
+  const level = useMyLevel()
+  const levelInfo = describeLevel(level.data?.finalLevel)
 
   return (
     <div className="space-y-10">
+      {levelInfo && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4 text-indigo-900">
+          <p className="text-sm text-indigo-700">Your level</p>
+          <p className="text-xl font-bold">{levelInfo.label}</p>
+          {levelInfo.description && <p className="text-sm">{levelInfo.description}</p>}
+        </div>
+      )}
       {notes.data && notes.data.length > 0 && (
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {notes.data.map((n, i) => (

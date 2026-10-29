@@ -23,3 +23,13 @@ export type PlacementResult = {
   writtenLevel: string // 'Pre-A1' | 'A1 initial' | 'A1' | 'A2' | 'B1'
   possiblyAboveB1: boolean
 }
+
+export type InterviewMark = 'Pre-A1' | 'A1' | 'A2' | 'B1'
+
+export type InterviewScores = {
+  comprehension: InterviewMark
+  fluency: InterviewMark
+  grammar: InterviewMark
+  vocabulary: InterviewMark
+  pronunciation: InterviewMark
+}

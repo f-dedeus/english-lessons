@@ -5,8 +5,89 @@ export type User = {
   name: string 
   email: string 
   role: Role
+  status: StudentStatus
   mustChangePassword: boolean
+  placementRequired: boolean
 }
+
+export type PlacementQuestion = {
+  id: number
+  type: 'multiple_choice'
+  part: number // 1, 2 or 3 (the levels are not shown to students)
+  passage?: string // reading text shared by a group of questions
+  prompt: string
+  options: string[]
+  multiple: boolean
+  correct: number[] // always empty for students
+}
+
+export type PlacementState = {
+  state: 'not_available' | 'not_started' | 'running' | 'expired' | 'submitted'
+  required: boolean
+  questionCount: number
+  timeLimitMinutes?: number
+  endsAt?: string
+  serverNow: string
+  schedulingMessage?: string
+  writtenLevel?: string
+  possiblyAboveB1?: boolean
+  questions: PlacementQuestion[]
+}
+
+export type Mark = 'Pre-A1' | 'A1' | 'A2' | 'B1'
+export type FinalLevel = Mark | 'Above B1'
+export type CriterionKey = 'comprehension' | 'fluency' | 'grammar' | 'vocabulary' | 'pronunciation'
+export type InterviewScores = Record<CriterionKey, Mark>
+
+export type PlacementBlock = { level: string; correct: number; total: number; passed: boolean }
+
+export type PlacementOverviewRow = {
+  studentId: number
+  name: string
+  email: string
+  status: StudentStatus
+  needsTest: boolean
+  testState: 'not_taken' | 'in_progress' | 'submitted'
+  expired: boolean
+  submittedAt?: string
+  writtenLevel?: string
+  possiblyAboveB1?: boolean
+  oralLevel?: string
+  finalLevel?: string
+  interviewedOn?: string
+}
+
+export type PlacementReviewQuestion = {
+  id: number
+  number: number
+  level: string
+  prompt: string
+  options: string[]
+  correct: number
+  chosen?: number
+}
+
+export type PlacementDetail = {
+  student: { id: number; name: string; email: string; status: StudentStatus; needsTest: boolean }
+  attempt?: {
+    startedAt: string
+    submittedAt?: string
+    expired: boolean
+    writtenLevel?: string
+    possiblyAboveB1?: boolean
+    blocks?: PlacementBlock[]
+  }
+  review: PlacementReviewQuestion[]
+  interview?: {
+    interviewedOn: string
+    scores: InterviewScores
+    oralLevel: string
+    finalLevel: string
+    notes: string
+  }
+}
+
+export type PlacementSettings = { timeLimitMinutes: number; schedulingMessage: string }
 
 // Reusable content (the library)
 export type Lesson = {

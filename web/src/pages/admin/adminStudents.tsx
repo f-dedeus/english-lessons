@@ -9,6 +9,7 @@ import {
   useUpdateStudent,
 } from '../../hooks/useStudentMutations'
 import StudentForm from '../../components/admin/studentForm'
+import { usePlacementOverview } from '../../hooks/usePlacementAdmin'
 
 type Mode = null | 'new' | number // number = id of the student being edited
 type Credentials = { name: string; email: string; password: string; reason: 'created' | 'reset' }
@@ -59,6 +60,8 @@ export default function AdminStudents() {
   const reject = useRejectStudent()
   const reset = useResetStudentPassword()
   const dismiss = useDismissResetRequest()
+  const overview = usePlacementOverview()
+  const placementById = new Map((overview.data ?? []).map((r) => [r.studentId, r]))
 
   const [mode, setMode] = useState<Mode>(null)
   const [search, setSearch] = useState('')
@@ -154,6 +157,17 @@ export default function AdminStudents() {
               <div className="min-w-0">
                 <p className="font-medium text-slate-800 wrap-anywhere">{s.name}</p>
                 <p className="text-sm text-slate-500 wrap-anywhere">{s.email}</p>
+                <p className="text-sm text-slate-600">
+                  {placementById.get(s.id)?.testState === 'submitted'
+                    ? `Written test: ${placementById.get(s.id)?.writtenLevel}`
+                    : placementById.get(s.id)?.testState === 'in_progress'
+                      ? 'Test in progress'
+                      : 'Test not taken yet'}
+                  {' · '}
+                  <Link to={`/admin/placement/${s.id}`} className="text-indigo-600 hover:underline">
+                    Details
+                  </Link>
+                </p>
               </div>
               <div className="flex items-center gap-4">
                 <button

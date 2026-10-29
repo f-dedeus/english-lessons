@@ -9,8 +9,15 @@ export default function ProtectedRoute({ role }: { role?: Role }) {
 
   if (!user) return <Navigate to="/login" replace />
 
+  // Still on a temporary password: choose a new one first
   if (user.mustChangePassword) return <Navigate to="/set-password" replace />
 
+  // New students take the placement test first, and wait there until the teacher approves them
+  if (user.role === 'student' && (user.status === 'pending' || user.placementRequired)) {
+    return <Navigate to="/placement-test" replace />
+  }
+
+  // Wrong role: send them to their own home instead of showing an error
   if (role && user.role !== role) {
     return <Navigate to={user.role === 'teacher' ? '/admin/lessons' : '/'} replace />
   }

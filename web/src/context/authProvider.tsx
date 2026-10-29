@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     const me = await api.get<User>('/auth/me')
     setUser(me)
+    return me
   }, [])
 
   return (

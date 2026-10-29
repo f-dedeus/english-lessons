@@ -20,7 +20,9 @@ import AdminPayments from './pages/admin/adminPayments'
 import Account from './pages/account'
 import ForgotPassword from './pages/forgotPassword'
 import SetPassword from './pages/setPassword'
-
+import PlacementTest from './pages/placementTest'
+import AdminPlacement from './pages/admin/adminPlacement'
+import AdminPlacementStudent from './pages/admin/adminPlacementStudent'
 
 //const Placeholder = ({ name }: { name: string }) => (
 //  <h2 className="text-xl text-slate-700">{name} (coming soon)</h2>
@@ -33,6 +35,7 @@ export default function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/set-password" element={<SetPassword />} />
+      <Route path="/placement-test" element={<PlacementTest />} />
 
       {/* Must be logged in */}
       <Route element={<ProtectedRoute />}>
@@ -58,6 +61,8 @@ export default function App() {
             <Route path="/admin/homework/:id/edit" element={<AdminHomeworkEdit />} />
             <Route path="/admin/submissions" element={<AdminSubmissions />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
+            <Route path="/admin/placement" element={<AdminPlacement />} />
+            <Route path="/admin/placement/:id" element={<AdminPlacementStudent />} />
           </Route>
         </Route>
       </Route>

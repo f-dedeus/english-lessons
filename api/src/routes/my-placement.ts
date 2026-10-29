@@ -2,7 +2,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
-import { placementAttempts, placementQuestions, users } from '../db/schema/index.ts'
+import { placementAttempts,placementInterviews, placementQuestions, users } from '../db/schema/index.ts'
 import { checkAnswers, normalizeAnswers } from '../homework/questions.ts'
 import { endsAtOf, GRACE_MS } from '../homework/timer.ts'
 import { LEVELS, scorePlacement } from '../placement/scoring.ts'
@@ -162,6 +162,18 @@ export const myPlacementRoutes: FastifyPluginAsyncZod = async (app) => {
         .where(and(eq(placementAttempts.id, attempt.id), isNull(placementAttempts.submittedAt)))
 
       return reply.code(204).send()
+    },
+  )
+    // The final level, once the teacher has recorded it after the interview
+  app.get(
+    '/me/level',
+    { schema: { response: { 200: z.object({ finalLevel: z.string().optional() }) } } },
+    async (request) => {
+      const [row] = await db
+        .select({ finalLevel: placementInterviews.finalLevel })
+        .from(placementInterviews)
+        .where(eq(placementInterviews.studentId, request.user.id))
+      return { finalLevel: row?.finalLevel }
     },
   )
 }

@@ -1,6 +1,11 @@
-import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { date, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { id } from './helpers.ts'
-import type { PlacementResult, QuestionContent, SubmissionAnswers } from './json-types.ts'
+import type {
+  InterviewScores,
+  PlacementResult,
+  QuestionContent,
+  SubmissionAnswers,
+} from './json-types.ts'
 import { users } from './users.ts'
 
 // The questions of the placement test, in order
@@ -32,6 +37,24 @@ export const placementAttempts = pgTable(
   },
   (t) => [index('placement_attempts_level_idx').on(t.writtenLevel)],
 )
+
+// The teacher's interview sheet (one per student)
+export const placementInterviews = pgTable('placement_interviews', {
+  id: id(),
+  studentId: integer()
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  interviewedOn: date({ mode: 'string' }).notNull(),
+  scores: jsonb().$type<InterviewScores>().notNull(),
+  oralLevel: text().notNull(),
+  finalLevel: text().notNull(),
+  notes: text().notNull().default(''),
+  updatedAt: timestamp({ withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
 
 // Small teacher-editable settings: the timer and the scheduling message
 export const appSettings = pgTable('app_settings', {
