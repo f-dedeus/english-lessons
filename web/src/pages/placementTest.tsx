@@ -6,6 +6,7 @@ import { useCountdown } from '../hooks/useCountdown'
 import { usePlacement, useStartPlacement, useSubmitPlacement } from '../hooks/usePlacement'
 import { describeLevel } from '../utils/placement'
 import { formatTime } from '../utils/time'
+import Logo from '../components/logo'
 
 function Shell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth()
@@ -13,7 +14,7 @@ function Shell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-bold text-indigo-600">English Lessons</span>
+          <Logo />
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500">{user?.name}</span>
             <button

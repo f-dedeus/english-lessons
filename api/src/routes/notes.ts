@@ -3,6 +3,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { notes, users } from '../db/schema/index.ts'
+import { notifyUser } from '../notifications.ts'
 
 const noteSchema = z.object({
   id: z.number(),
@@ -76,6 +77,13 @@ export const noteRoutes: FastifyPluginAsyncZod = async (app) => {
         .values({ ...request.body, studentId: student.id, createdBy: request.user.id })
         .returning()
 
+      await notifyUser(student.id, {
+        type: 'note',
+        title: 'New note from your teacher',
+        body: note.text.slice(0, 80),
+        link: '/',
+      })
+      
       return reply.code(201).send(toNote(note))
     },
   )

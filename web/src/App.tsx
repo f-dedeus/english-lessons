@@ -24,9 +24,6 @@ import PlacementTest from './pages/placementTest'
 import AdminPlacement from './pages/admin/adminPlacement'
 import AdminPlacementStudent from './pages/admin/adminPlacementStudent'
 
-//const Placeholder = ({ name }: { name: string }) => (
-//  <h2 className="text-xl text-slate-700">{name} (coming soon)</h2>
-//)
 
 export default function App() {
   return (

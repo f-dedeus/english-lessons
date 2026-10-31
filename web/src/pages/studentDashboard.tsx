@@ -42,6 +42,9 @@ export default function StudentDashboard() {
         <h2 className="mb-4 text-xl font-semibold text-slate-800">Your lessons</h2>
         {lessons.isLoading && <p className="text-slate-500">Loading lessons...</p>}
         {lessons.isError && <p className="text-red-600">Could not load lessons.</p>}
+        {lessons.data?.length === 0 && (
+          <p className="text-slate-500">No lessons yet. Your teacher will assign some soon.</p>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           {lessons.data?.map((lesson) => (
             <Link
@@ -60,6 +63,9 @@ export default function StudentDashboard() {
         <h2 className="mb-4 text-xl font-semibold text-slate-800">Homework</h2>
         {assignments.isLoading && <p className="text-slate-500">Loading homework...</p>}
         {assignments.isError && <p className="text-red-600">Could not load homework.</p>}
+        {assignments.data?.length === 0 && (
+          <p className="text-slate-500">No homework right now. Enjoy the break!</p>
+        )}
         <div className="space-y-3">
           {assignments.data?.map((a) => (
             <AssignmentCard key={a.id} assignment={a} />

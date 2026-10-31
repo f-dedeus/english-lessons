@@ -4,7 +4,21 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <meta name="theme-color" content="#1f6f78" />
+    <style>
+      html { background: #fff6e8; }
+      html.dark { background: #1a0f0a; }
+    </style>
+    <meta name="description" content="English lessons, homework and level tests for students and their teacher." />
+    <title>English Lessons</title>
+    <script>
+      try {
+        var saved = localStorage.getItem('theme')
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

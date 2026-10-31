@@ -1,1 +1,152 @@
 @import "tailwindcss";
+
+/* "dark:" classes follow the .dark class on <html> (set by the theme toggle) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Brand palette ----
+   Cream #FFF6E8 (background), brown #2E1B12 (text and titles), petrol #1F6F78 (main accent),
+   gem yellow #FFC83D (second accent).
+   The whole app uses the "slate" shades for grays, the "indigo" shades for its accent and the
+   "amber" shades for warnings, so redefining those shades here restyles everything. */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* The four brand colors, for classes like bg-gem or text-brown */
+  --color-cream: #fff6e8;
+  --color-brown: #2e1b12;
+  --color-petrol: #1f6f78;
+  --color-gem: #ffc83d;
+
+  /* "White": cards, and text on buttons (a warm white) */
+  --color-white: #fffcf7;
+
+  /* Grays, tinted warm from the cream and the brown */
+  --color-slate-50: #fff6e8; /* page background */
+  --color-slate-100: #f8ebd7;
+  --color-slate-200: #ebdcc5; /* borders */
+  --color-slate-300: #d9c6ab;
+  --color-slate-400: #a8927e;
+  --color-slate-500: #7d6755;
+  --color-slate-600: #5e4a3b;
+  --color-slate-700: #46332a;
+  --color-slate-800: #2e1b12; /* text and titles */
+  --color-slate-900: #24150e;
+  --color-slate-950: #170c07;
+
+  /* Main accent: the "indigo" shades are the petrol (600 is #1F6F78) */
+  --color-indigo-50: #edf7f8;
+  --color-indigo-100: #d5ecee;
+  --color-indigo-200: #aedade;
+  --color-indigo-300: #7fc1c8;
+  --color-indigo-400: #4ba0a9;
+  --color-indigo-500: #2d8690;
+  --color-indigo-600: #1f6f78;
+  --color-indigo-700: #195a62;
+  --color-indigo-800: #15484f;
+  --color-indigo-900: #123b41;
+  --color-indigo-950: #0a2328;
+
+  /* Warnings and highlights: the "amber" shades follow the gem yellow (400 is #FFC83D) */
+  --color-amber-50: #fff8e0;
+  --color-amber-100: #ffedb8;
+  --color-amber-200: #ffe08a;
+  --color-amber-300: #ffd461;
+  --color-amber-400: #ffc83d;
+  --color-amber-500: #f2b01e;
+  --color-amber-600: #d79300;
+  --color-amber-700: #a86f00;
+  --color-amber-800: #7e5300;
+  --color-amber-900: #5c3d00;
+  --color-amber-950: #3a2600;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+
+  /* A clear focus ring for people using the keyboard */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-500;
+  }
+
+  /* Selected text uses the gem yellow */
+  ::selection {
+    background-color: #ffc83d;
+    color: #2e1b12;
+  }
+
+  /* Long words without spaces (names, emails, pasted text) wrap instead of stretching the page */
+  main :where(p, h1, h2, h3, h4, li, label, span, a) {
+    overflow-wrap: anywhere;
+  }
+  main .flex > * {
+    min-width: 0;
+  }
+}
+
+/* ---- Dark theme ----
+   While <html> has the "dark" class, the palette is mirrored: the light shades (backgrounds)
+   become dark brown ones, and the dark shades (text) become cream ones. The middle shades
+   (400 to 600), used for buttons and accents, stay. */
+.dark {
+  color-scheme: dark;
+
+  /* Grays: warm dark browns, with cream text */
+  --color-slate-50: #1a0f0a; /* page background */
+  --color-slate-100: #3a281d;
+  --color-slate-200: #4a3526; /* borders */
+  --color-slate-300: #5f4a39;
+  --color-slate-400: #a38f7c;
+  --color-slate-500: #c2ae9a;
+  --color-slate-600: #d3c2af;
+  --color-slate-700: #e5d8c7;
+  --color-slate-800: #fff6e8; /* text and titles */
+  --color-slate-900: #fffbf3;
+  --color-slate-950: #fffdf9;
+
+  /* Petrol tints */
+  --color-indigo-50: #0a2328; --color-indigo-100: #123b41; --color-indigo-200: #15484f; --color-indigo-300: #195a62;
+  --color-indigo-700: #7fc1c8; --color-indigo-800: #aedade; --color-indigo-900: #d5ecee; --color-indigo-950: #edf7f8;
+
+  /* Gem tints */
+  --color-amber-50: #3a2600; --color-amber-100: #5c3d00; --color-amber-200: #7e5300; --color-amber-300: #a86f00;
+  --color-amber-700: #ffd461; --color-amber-800: #ffe08a; --color-amber-900: #ffedb8; --color-amber-950: #fff8e0;
+
+  /* Other colored boxes, badges and notes */
+  --color-red-50: #450a0a; --color-red-100: #7f1d1d; --color-red-200: #991b1b; --color-red-300: #b91c1c;
+  --color-red-700: #fca5a5; --color-red-800: #fecaca; --color-red-900: #fee2e2; --color-red-950: #fef2f2;
+
+  --color-green-50: #052e16; --color-green-100: #14532d; --color-green-200: #166534; --color-green-300: #15803d;
+  --color-green-700: #86efac; --color-green-800: #bbf7d0; --color-green-900: #dcfce7; --color-green-950: #f0fdf4;
+
+  --color-sky-50: #082f49; --color-sky-100: #0c4a6e; --color-sky-200: #075985; --color-sky-300: #0369a1;
+  --color-sky-700: #7dd3fc; --color-sky-800: #bae6fd; --color-sky-900: #e0f2fe; --color-sky-950: #f0f9ff;
+
+  --color-blue-50: #172554; --color-blue-100: #1e3a8a; --color-blue-200: #1e40af; --color-blue-300: #1d4ed8;
+  --color-blue-700: #93c5fd; --color-blue-800: #bfdbfe; --color-blue-900: #dbeafe; --color-blue-950: #eff6ff;
+
+  --color-yellow-50: #422006; --color-yellow-100: #713f12; --color-yellow-200: #854d0e; --color-yellow-300: #a16207;
+  --color-yellow-700: #fde047; --color-yellow-800: #fef08a; --color-yellow-900: #fef9c3; --color-yellow-950: #fefce8;
+
+  --color-pink-50: #500724; --color-pink-100: #831843; --color-pink-200: #9d174d; --color-pink-300: #be185d;
+  --color-pink-700: #f9a8d4; --color-pink-800: #fbcfe8; --color-pink-900: #fce7f3; --color-pink-950: #fdf2f8;
+}
+
+/* Cards and panels: the brand brown ("white" is also used as the text color on buttons, so
+   only its background use is changed) */
+.dark .bg-white {
+  background-color: #2e1b12;
+}
+
+/* Links and accent text that need to be lighter on a dark background */
+.dark .text-indigo-600 {
+  color: var(--color-indigo-400, #4ba0a9);
+}
+.dark .text-red-600 {
+  color: #f87171;
+}

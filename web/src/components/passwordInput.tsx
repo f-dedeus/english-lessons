@@ -1,6 +1,8 @@
 import { useState, type InputHTMLAttributes } from 'react'
 
-type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
+type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
+  tone?: 'light' | 'dark'
+}
 
 const iconProps = {
   xmlns: 'http://www.w3.org/2000/svg',
@@ -34,18 +36,20 @@ function EyeOffIcon() {
   )
 }
 
-export default function PasswordInput({ className = '', ...props }: Props) {
+export default function PasswordInput({ className = '', tone = 'light', ...props }: Props) {
   const [visible, setVisible] = useState(false)
 
   return (
     <div className="relative">
-      <input {...props} type={visible ? 'text' : 'password'} className={`${className} pr-10`} />
+      <input {...props} type={visible ? 'text' : 'password'} className={`${className} pr-11`} />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? 'Hide password' : 'Show password'}
         aria-pressed={visible}
-        className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600"
+        className={`absolute inset-y-0 right-0 flex items-center px-3 ${
+          tone === 'dark' ? 'text-[#a38f7c] hover:text-[#fff6e8]' : 'text-slate-400 hover:text-slate-600'
+        }`}
       >
         {visible ? <EyeOffIcon /> : <EyeIcon />}
       </button>

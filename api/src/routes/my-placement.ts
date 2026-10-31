@@ -8,6 +8,7 @@ import { endsAtOf, GRACE_MS } from '../homework/timer.ts'
 import { LEVELS, scorePlacement } from '../placement/scoring.ts'
 import { getPlacementSettings } from '../settings.ts'
 import { answerSchema } from './homework-schemas.ts'
+import { notifyTeachers } from '../notifications.ts'
 
 // What the student receives: no answer key, and no level (just "part 1, 2, 3")
 const studentQuestion = z.object({
@@ -160,7 +161,17 @@ export const myPlacementRoutes: FastifyPluginAsyncZod = async (app) => {
         .update(placementAttempts)
         .set({ submittedAt: new Date(), answers, result, writtenLevel: result.writtenLevel })
         .where(and(eq(placementAttempts.id, attempt.id), isNull(placementAttempts.submittedAt)))
-
+        
+      const [student] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, request.user.id))
+      await notifyTeachers({
+        type: 'placement_done',
+        title: 'Placement test finished',
+        body: `${student?.name ?? 'A student'} finished the written test: ${result.writtenLevel}.`,
+        link: `/admin/placement/${request.user.id}`,
+      })
       return reply.code(204).send()
     },
   )

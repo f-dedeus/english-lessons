@@ -231,3 +231,18 @@ export type Note = {
 }
 
 export type NoteInput = Pick<Note, 'studentId' | 'text' | 'color' | 'pinned'>
+
+export type AppNotification = {
+  id: number
+  type: string
+  title: string
+  body: string
+  link?: string
+  createdAt: string
+  read: boolean
+}
+
+export type NotificationsResponse = {
+  unreadCount: number
+  items: AppNotification[]
+}

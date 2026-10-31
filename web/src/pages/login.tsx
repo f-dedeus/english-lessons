@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import AuthLayout from '../components/authLayout'
+import { authError, authInput, authLabel, authPrimaryButton } from '../components/authStyles'
 import PasswordInput from '../components/passwordInput'
 
-const inputClass =
-  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none'
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -29,62 +29,74 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-slate-200 bg-white p-8 shadow-sm"
-      >
-        <h1 className="text-center text-2xl font-bold text-indigo-600">English4all</h1>
-
+    <AuthLayout
+      title="Log in"
+      subtitle="Log in to your account and keep learning."
+      cta={{ text: 'Not studying with us yet?', label: 'Create account', to: '/signup' }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+          <label className={authLabel}>
+            Email <span className="text-red-500">*</span>
+          </label>
           <input
             type="email"
             autoComplete="username"
-            className={inputClass}
+            className={authInput}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+          <label className={authLabel}>
+            Password <span className="text-red-500">*</span>
+          </label>
           <PasswordInput
+            tone="dark"
             autoComplete="current-password"
-            className={inputClass}
+            className={authInput}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
-        <div className="text-right">
-          <Link to="/forgot-password" className="text-sm text-indigo-600 hover:underline">
-            Forgot your password?
-          </Link>
-        </div>
+        {error && <p className={authError}>{error}</p>}
 
-        {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={submitting || !email || !password}
-          className="w-full rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {submitting ? 'Logging in...' : 'Log in'}
+        <button type="submit" disabled={submitting || !email || !password} className={`mt-2 ${authPrimaryButton}`}>
+          {submitting ? (
+            'Logging in...'
+          ) : (
+            <>
+              Log in
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </>
+          )}
         </button>
 
-        <p className="text-center text-sm text-slate-500">
-          New Here?{' '}
-          <Link to="/signup" className="font-medium text-indigo-600 hover:underline">
-            Create an account
+        <p className="text-center">
+          <Link to="/forgot-password" className="text-sm text-[#c2ae9a] underline hover:text-[#fff6e8]">
+            Forgot your password?
           </Link>
         </p>
-
-        {import.meta.env.DEV && (
-          <p className="text-center text-xs text-slate-400">
-            Dev logins: teacher@example.com or ana@example.com, password: password123
-          </p>
-        )}
       </form>
-    </div>
+
+      {import.meta.env.DEV && (
+        <p className="mt-8 text-center text-xs text-slate-500">
+          Dev logins: teacher@example.com or ana@example.com, password: password123
+        </p>
+      )}
+    </AuthLayout>
   )
 }

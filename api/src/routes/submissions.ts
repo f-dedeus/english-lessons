@@ -3,7 +3,8 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { fetchDetails } from '../db/homework-queries.ts'
-import { homeworkAssignments, submissions } from '../db/schema/index.ts'
+import { homework, homeworkAssignments, submissions } from '../db/schema/index.ts'
+import { notifyUser } from '../notifications.ts'
 import { submissionRowSchema } from './homework-schemas.ts'
 
 export const submissionRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -37,6 +38,13 @@ export const submissionRoutes: FastifyPluginAsyncZod = async (app) => {
       const assignmentId = request.params.id
       const { grade, feedback } = request.body
 
+      const [info] = await db
+        .select({ studentId: homeworkAssignments.studentId, title: homework.title })
+        .from(homeworkAssignments)
+        .innerJoin(homework, eq(homeworkAssignments.homeworkId, homework.id))
+        .where(eq(homeworkAssignments.id, assignmentId))
+      if (!info) throw app.httpErrors.notFound('Submission not found.')
+
       await db.transaction(async (tx) => {
         const [submission] = await tx
           .select({ id: submissions.id })
@@ -53,6 +61,13 @@ export const submissionRoutes: FastifyPluginAsyncZod = async (app) => {
           .update(homeworkAssignments)
           .set({ status: 'graded' })
           .where(eq(homeworkAssignments.id, assignmentId))
+      })
+
+      await notifyUser(info.studentId, {
+        type: 'homework_graded',
+        title: 'Homework graded',
+        body: `${info.title}: ${grade}/10`,
+        link: `/homework/${assignmentId}`,
       })
 
       return reply.code(204).send()

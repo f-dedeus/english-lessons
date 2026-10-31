@@ -3,6 +3,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { lessonAssignments, lessons, users } from '../db/schema/index.ts'
+import { notifyUser, notifyUsers } from '../notifications.ts'
 
 const idParams = z.object({ id: z.coerce.number().int().positive() })
 const positiveInt = z.number().int().positive()
@@ -53,7 +54,7 @@ export const lessonAssignmentRoutes: FastifyPluginAsyncZod = async (app) => {
       const studentIds = [...new Set(request.body.studentIds)]
 
       const [lesson] = await db
-        .select({ status: lessons.status })
+        .select({ status: lessons.status, title: lessons.title })
         .from(lessons)
         .where(eq(lessons.id, lessonId))
       if (!lesson) throw app.httpErrors.notFound('Lesson not found.')
@@ -70,6 +71,15 @@ export const lessonAssignmentRoutes: FastifyPluginAsyncZod = async (app) => {
           throw app.httpErrors.badRequest('One or more students do not exist.')
         }
       }
+
+      const before = new Set(
+        (
+          await db
+            .select({ studentId: lessonAssignments.studentId })
+            .from(lessonAssignments)
+            .where(eq(lessonAssignments.lessonId, lessonId))
+        ).map((row) => row.studentId),
+      )
 
       await db.transaction(async (tx) => {
         await tx
@@ -91,6 +101,12 @@ export const lessonAssignmentRoutes: FastifyPluginAsyncZod = async (app) => {
         }
       })
 
+      // Only the students who did not have this lesson before are notified
+      await notifyUsers(
+        studentIds.filter((studentId) => !before.has(studentId)),
+        { type: 'lesson_assigned', title: 'New lesson', body: lesson.title, link: `/lessons/${lessonId}` },
+      )
+
       return reply.code(204).send()
     },
   )
@@ -103,7 +119,7 @@ export const lessonAssignmentRoutes: FastifyPluginAsyncZod = async (app) => {
       const { lessonId, studentId } = request.body
 
       const [lesson] = await db
-        .select({ status: lessons.status })
+        .select({ status: lessons.status, title: lessons.title })
         .from(lessons)
         .where(eq(lessons.id, lessonId))
       if (!lesson) throw app.httpErrors.notFound('Lesson not found.')
@@ -117,7 +133,21 @@ export const lessonAssignmentRoutes: FastifyPluginAsyncZod = async (app) => {
         .where(and(eq(users.id, studentId), eq(users.role, 'student')))
       if (!student) throw app.httpErrors.notFound('Student not found.')
 
-      await db.insert(lessonAssignments).values({ lessonId, studentId }).onConflictDoNothing()
+      const created = await db
+        .insert(lessonAssignments)
+        .values({ lessonId, studentId })
+        .onConflictDoNothing()
+        .returning({ id: lessonAssignments.id })
+
+      if (created.length > 0) {
+        await notifyUser(studentId, {
+          type: 'lesson_assigned',
+          title: 'New lesson',
+          body: lesson.title,
+          link: `/lessons/${lessonId}`,
+        })
+      }
+
       return reply.code(204).send()
     },
   )

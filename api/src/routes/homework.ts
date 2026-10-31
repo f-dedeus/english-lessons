@@ -13,6 +13,7 @@ import {
 } from '../db/schema/index.ts'
 import { sameJson } from '../homework/questions.ts'
 import { isExpired } from '../homework/timer.ts'
+import { notifyUsers } from '../notifications.ts'
 import { assignmentSchema, homeworkSchema, questionInput } from './homework-schemas.ts'
 
 const idParams = z.object({ id: z.coerce.number().int().positive() })
@@ -258,7 +259,7 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   )
 
-  // Students who already have it are skipped
+  // Students who already have it are skipped (and are not notified again)
   app.post(
     '/homework/:id/assign',
     {
@@ -271,7 +272,10 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
       const homeworkId = request.params.id
       const studentIds = [...new Set(request.body.studentIds)]
 
-      const [existing] = await db.select({ id: homework.id }).from(homework).where(eq(homework.id, homeworkId))
+      const [existing] = await db
+        .select({ id: homework.id, title: homework.title })
+        .from(homework)
+        .where(eq(homework.id, homeworkId))
       if (!existing) throw app.httpErrors.notFound('Homework not found.')
 
       const found = await db
@@ -282,10 +286,22 @@ export const homeworkRoutes: FastifyPluginAsyncZod = async (app) => {
         throw app.httpErrors.badRequest('One or more students do not exist.')
       }
 
-      await db
+      const created = await db
         .insert(homeworkAssignments)
         .values(studentIds.map((studentId) => ({ homeworkId, studentId, dueDate: request.body.dueDate })))
         .onConflictDoNothing()
+        .returning({ studentId: homeworkAssignments.studentId })
+
+      // Only the students who just received it are notified
+      await notifyUsers(
+        created.map((row) => row.studentId),
+        {
+          type: 'homework_assigned',
+          title: 'New homework',
+          body: `${existing.title} · due ${request.body.dueDate}`,
+          link: '/homework',
+        },
+      )
 
       return reply.code(204).send()
     },

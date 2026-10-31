@@ -3,10 +3,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { fetchDetails, hideAnswers } from '../db/homework-queries.ts'
-import { homework, homeworkAssignments, homeworkQuestions, submissions } from '../db/schema/index.ts'
+import { homework, homeworkAssignments, homeworkQuestions, submissions, users } from '../db/schema/index.ts'
 import { checkAnswers, normalizeAnswers } from '../homework/questions.ts'
 import { endsAtOf, GRACE_MS, isExpired } from '../homework/timer.ts'
 import { answerSchema, detailSchema } from './homework-schemas.ts'
+import { notifyTeachers } from '../notifications.ts'
 
 const idParams = z.object({ id: z.coerce.number().int().positive() })
 
@@ -148,9 +149,13 @@ export const myHomeworkRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      await db.transaction(async (tx) => {
+      const homeworkTitle = await db.transaction(async (tx) => {
         const [row] = await tx
-          .select({ assignment: homeworkAssignments, limit: homework.timeLimitMinutes })
+          .select({
+            assignment: homeworkAssignments,
+            limit: homework.timeLimitMinutes,
+            title: homework.title,
+          })
           .from(homeworkAssignments)
           .innerJoin(homework, eq(homeworkAssignments.homeworkId, homework.id))
           .where(
@@ -160,7 +165,7 @@ export const myHomeworkRoutes: FastifyPluginAsyncZod = async (app) => {
             ),
           )
         if (!row) throw app.httpErrors.notFound('Homework not found.')
-        const { assignment, limit } = row
+        const { assignment, limit, title } = row
 
         if (assignment.status === 'graded') {
           throw app.httpErrors.conflict('This homework was already graded and can no longer be changed.')
@@ -207,7 +212,23 @@ export const myHomeworkRoutes: FastifyPluginAsyncZod = async (app) => {
           .update(homeworkAssignments)
           .set({ status: 'submitted' })
           .where(eq(homeworkAssignments.id, assignment.id))
+
+        return title
       })
+
+      const [student] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, request.user.id))
+      await notifyTeachers(
+        {
+          type: 'homework_submitted',
+          title: 'Homework submitted',
+          body: `${student?.name ?? 'A student'} sent "${homeworkTitle}".`,
+          link: '/admin/submissions',
+        },
+        { dedupe: true },
+      )
 
       return reply.code(204).send()
     },

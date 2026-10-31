@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '../db/client.ts'
 import { isUniqueViolation } from '../db/errors.ts'
 import { users } from '../db/schema/index.ts'
+import { notifyTeachers } from '../notifications.ts'
 import { isPlacementRequired } from '../placement/state.ts'
 
 // Checked when the email doesn't exist, so unknown emails take as long as wrong passwords
@@ -99,6 +100,13 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         throw error
       }
 
+      await notifyTeachers({
+        type: 'signup',
+        title: 'New sign-up',
+        body: `${name} (${email}) is waiting for approval.`,
+        link: '/admin/students',
+      })
+
       return reply.code(201).send({
         message:
           'Account created. Log in to take a short placement test. Your teacher will approve your account afterwards.',
@@ -118,7 +126,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      await db
+      const matched = await db
         .update(users)
         .set({ passwordResetRequestedAt: new Date() })
         .where(
@@ -128,6 +136,20 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
             inArray(users.status, ['active', 'pending']),
           ),
         )
+        .returning({ name: users.name })
+
+      // Not awaited, so the response takes the same time whether or not the email exists
+      for (const student of matched) {
+        void notifyTeachers(
+          {
+            type: 'reset_request',
+            title: 'Password reset requested',
+            body: `${student.name} asked for a new password.`,
+            link: '/admin/students',
+          },
+          { dedupe: true },
+        )
+      }
 
       return reply.code(202).send({
         message:

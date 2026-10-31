@@ -12,6 +12,7 @@ import {
 import { endsAtOf, GRACE_MS } from '../homework/timer.ts'
 import { computeOralLevel, FINAL_LEVELS, MARKS } from '../placement/interview.ts'
 import { getPlacementSettings } from '../settings.ts'
+import { notifyUser } from '../notifications.ts'
 
 const idParams = z.object({ id: z.coerce.number().int().positive() })
 const mark = z.enum(MARKS)
@@ -247,6 +248,16 @@ export const placementRoutes: FastifyPluginAsyncZod = async (app) => {
         .values({ studentId, ...values })
         .onConflictDoUpdate({ target: placementInterviews.studentId, set: values })
 
+      await notifyUser(
+        studentId,
+        {
+          type: 'level_recorded',
+          title: 'Your level is ready',
+          body: `Your level: ${request.body.finalLevel}`,
+          link: '/',
+        },
+        { dedupe: true },
+      )  
       return reply.code(204).send()
     },
   )
