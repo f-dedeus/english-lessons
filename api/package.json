@@ -11,6 +11,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file=.env src/db/seed.ts",
     "db:import-placement": "tsx --env-file=.env src/db/import-placement.ts",
+    "prod:migrate": "tsx --env-file=.env.production src/db/migrate.ts",
+    "prod:import-placement": "tsx --env-file=.env.production src/db/import-placement.ts",
+    "prod:create-teacher": "tsx --env-file=.env.production src/db/create-teacher.ts",
     "build": "tsc"
   },
   "keywords": [],

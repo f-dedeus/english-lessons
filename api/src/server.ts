@@ -26,7 +26,7 @@ import { myPlacementRoutes } from './routes/my-placement.ts'
 import { placementRoutes } from './routes/placement.ts'
 import { notificationRoutes } from './routes/notifications.ts'
 
-const app = fastify().withTypeProvider<ZodTypeProvider>()
+const app = fastify({ trustProxy: env.TRUST_PROXY }).withTypeProvider<ZodTypeProvider>()
 
 
 function friendlyValidationMessage(error: FastifyError): string {
