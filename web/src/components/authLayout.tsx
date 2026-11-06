@@ -14,7 +14,7 @@ export default function AuthLayout({ title, subtitle, children, cta }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[#1a0f0a] text-[#fff6e8] lg:flex-row">
       {/* Form side */}
-      <section className="flex w-full flex-col px-6 py-10 sm:px-12 lg:w-[28%] lg:min-w-[440px] lg:px-14 lg:pb-10 lg:pt-24">
+      <section className="flex w-full flex-col px-6 py-10 sm:px-12 lg:w-[28%] lg:min-w-[440px] lg:px-14 lg:py-24">
         <div className="mx-auto w-full max-w-sm lg:mx-0">
           <div className="mb-10 lg:hidden">
             <Logo tone="light" />
@@ -33,18 +33,6 @@ export default function AuthLayout({ title, subtitle, children, cta }: Props) {
               </Link>
             </p>
           )}
-        </div>
-
-        {/* Faint dots at the bottom. They are part of the normal layout (pushed down with
-            mt-auto), so they can never sit on top of the form or the hint text. */}
-        <div aria-hidden="true" className="mt-auto hidden pt-16 lg:block">
-          <div
-            className="h-24 opacity-20"
-            style={{
-              backgroundImage: 'radial-gradient(#fff6e8 1px, transparent 1px)',
-              backgroundSize: '20px 20px',
-            }}
-          />
         </div>
       </section>
 
