@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3333'
+// The API address, without a trailing slash
+const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3333').replace(/\/+$/, '')
 const TOKEN_KEY = 'auth-token'
 
 export function getToken(): string | null {
@@ -40,6 +41,13 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler
 }
 
+// Quietly wakes up the API (it sleeps when idle on the free plan). The answer is ignored.
+export function wakeUpApi() {
+  fetch(`${BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {
+    /* nothing to do */
+  })
+}
+
 type Options = { method?: string; body?: unknown }
 
 async function request<T>(path: string, { method = 'GET', body }: Options = {}): Promise<T> {
@@ -57,7 +65,7 @@ async function request<T>(path: string, { method = 'GET', body }: Options = {}):
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
-    throw new ApiError('Could not reach the server. Check your connection and try again.', 0)
+    throw new ApiError('Could not reach the server. If it was asleep, wait a minute and try again.', 0)
   }
 
   if (response.status === 204) return undefined as T

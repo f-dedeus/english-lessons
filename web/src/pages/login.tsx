@@ -1,10 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import AuthLayout from '../components/authLayout'
 import { authError, authInput, authLabel, authPrimaryButton } from '../components/authStyles'
 import PasswordInput from '../components/passwordInput'
-
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -12,6 +11,17 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [slow, setSlow] = useState(false)
+
+  // If the login takes more than 5 seconds, explain why (the server may be waking up)
+  useEffect(() => {
+    if (!submitting) return
+    const id = setTimeout(() => setSlow(true), 5000)
+    return () => {
+      clearTimeout(id)
+      setSlow(false)
+    }
+  }, [submitting])
 
   if (user) return <Navigate to={user.role === 'teacher' ? '/admin/lessons' : '/'} replace />
 
@@ -62,6 +72,12 @@ export default function Login() {
         </div>
 
         {error && <p className={authError}>{error}</p>}
+
+        {slow && !error && (
+          <p className="text-sm text-[#c2ae9a]">
+            Waking up the server... the first login of the day can take up to a minute.
+          </p>
+        )}
 
         <button type="submit" disabled={submitting || !email || !password} className={`mt-2 ${authPrimaryButton}`}>
           {submitting ? (

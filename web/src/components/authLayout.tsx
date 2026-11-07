@@ -14,7 +14,7 @@ export default function AuthLayout({ title, subtitle, children, cta }: Props) {
   return (
     <div className="flex min-h-screen flex-col bg-[#1a0f0a] text-[#fff6e8] lg:flex-row">
       {/* Form side */}
-      <section className="flex w-full flex-col px-6 py-10 sm:px-12 lg:w-[28%] lg:min-w-[440px] lg:px-14 lg:py-24">
+      <section className="flex w-full flex-col px-6 py-10 sm:px-12 lg:w-[28%] lg:min-w-110 lg:px-14 lg:py-24">
         <div className="mx-auto w-full max-w-sm lg:mx-0">
           <div className="mb-10 lg:hidden">
             <Logo tone="light" />
