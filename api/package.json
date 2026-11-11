@@ -14,6 +14,7 @@
     "prod:migrate": "tsx --env-file=.env.production src/db/migrate.ts",
     "prod:import-placement": "tsx --env-file=.env.production src/db/import-placement.ts",
     "prod:create-teacher": "tsx --env-file=.env.production src/db/create-teacher.ts",
+    "prod:reset-teacher-password": "tsx --env-file=.env.production src/db/reset-teacher-password.ts",
     "build": "tsc"
   },
   "keywords": [],
