@@ -21,7 +21,7 @@ A web platform where an English teacher shares lessons and homework with their s
   </tr>
   <tr>
     <td><img src="docs/screenshots/06-payments.png" alt="Payments grid" /><br /><sub>Monthly payments grid</sub></td>
-    <td><img src="docs/screenshots/07-dark-theme.png" alt="Light theme" /><br /><sub>Dark theme</sub></td>
+    <td><img src="docs/screenshots/07-dark-theme.png" alt="Light theme" /><br /><sub>Light theme</sub></td>
   </tr>
 </table>
 
